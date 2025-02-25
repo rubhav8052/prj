@@ -1,0 +1,27 @@
+# ==============================================================================
+#  C O P Y R I G H T
+# ------------------------------------------------------------------------------
+#  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
+#
+#  The reproduction, distribution and utilization of this file as
+#  well as the communication of its contents to others without express
+#  authorization is prohibited. Offenders will be held liable for the
+#  payment of damages. All rights reserved in the event of the grant
+#  of a patent, utility model or design.
+# ==============================================================================
+
+fastapi>=0.68.0
+pydantic>=1.8.0
+requests>=2.26.0
+python-dotenv>=0.19.0
+numpy>=1.21.0
+pandas>=1.3.0
+torch>=1.9.0
+transformers>=4.10.0
+pillow>=8.3.0
+streamlit>=0.85.0
+opencv-python>=4.5.0
+scikit-image>=0.18.0
+tqdm>=4.62.0
+aiohttp>=3.8.0
+python-multipart>=0.0.5

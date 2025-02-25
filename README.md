@@ -1,20 +1,36 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# ==============================================================================
+#  C O P Y R I G H T
+# ------------------------------------------------------------------------------
+#  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
+#
+#  The reproduction, distribution and utilization of this file as
+#  well as the communication of its contents to others without express
+#  authorization is prohibited. Offenders will be held liable for the
+#  payment of damages. All rights reserved in the event of the grant
+#  of a patent, utility model or design.
+# ==============================================================================
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+# Auto Labeling System
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+This repository contains the code for an automated labeling system using LLM-RAG pipeline.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+## Project Structure
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+- `src/`: Source code
+  - `api/`: API endpoints for different services
+  - `config/`: Configuration files
+  - `embedding/`: Embedding extraction services
+  - `llm/`: Language model services
+  - `vectordb/`: Vector database services
+  - `pipeline/`: Main pipeline orchestration
+  - ...
+
+## Setup and Installation
+
+1. Install requirements: `pip install -r requirements.txt`
+2. Configure environment variables (copy .env.template to .env and fill in values)
+3. Run the services
+
+## Usage
+
+See `docs/usage/` for detailed usage instructions.

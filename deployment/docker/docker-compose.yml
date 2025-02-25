@@ -1,0 +1,33 @@
+# ==============================================================================
+#  C O P Y R I G H T
+# ------------------------------------------------------------------------------
+#  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
+#
+#  The reproduction, distribution and utilization of this file as
+#  well as the communication of its contents to others without express
+#  authorization is prohibited. Offenders will be held liable for the
+#  payment of damages. All rights reserved in the event of the grant
+#  of a patent, utility model or design.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    
+  monitoring:
+    build: .
+    command: streamlit run src/monitoring/streamlit_ui.py
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
