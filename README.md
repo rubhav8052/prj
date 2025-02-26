@@ -12,7 +12,6 @@ This repository contains the code for an automated labeling system using LLM-RAG
   - `llm/`: Language model services
   - `vectordb/`: Vector database services
   - `pipeline/`: Main pipeline orchestration
-  - ...
 
 ## Setup and Installation
 
