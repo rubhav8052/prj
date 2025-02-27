@@ -10,7 +10,7 @@
 #  of a patent, utility model or design.
 # ==============================================================================
 
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+FROM FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
