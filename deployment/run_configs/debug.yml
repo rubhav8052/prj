@@ -1,0 +1,16 @@
+ENV: "muttiv4:7"
+EXPERIMENT: "mutti_testing"
+COMPUTE: "gpupoolt4nc16as"
+
+RUN_NAME: "ray_2_31" #None
+NODES: 1
+
+SCRIPT_ARGUMENTS:
+  CONFIG: None
+
+DEBUG: TRUE
+SRC: "."
+ENTRY_SCRIPT: "src/utils/debug.py"
+# ENTRY_SCRIPT: "notebooks/qwen_vllm_batch_inference.py"
+
+# ENTRY_SCRIPT: "tools/ios/ingest.py"
