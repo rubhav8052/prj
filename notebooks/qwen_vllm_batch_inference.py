@@ -8,6 +8,8 @@ from vehicle_prompt import vehicle_prompt
 from qwen_vl_utils import process_vision_info
 from tqdm import tqdm  # Import tqdm for progress tracking
 
+
+MODEL_PATH = os.environ["AZUREML_DATAREFERENCE_VDEEPINGESTPROD"] + "/object_retrieval/Qwen-2B weights/qwen2_vl_lora_sft_4_epochs_3885_128"
 # Initialize the model
 model_name = "Qwen/Qwen2-VL-2B-Instruct"
 llm = LLM(
@@ -16,6 +18,7 @@ llm = LLM(
     max_model_len=32768 if process_vision_info is None else 4096,
     max_num_seqs=5,
     limit_mm_per_prompt={"image": 16}, # max images per batch
+    dtype="float16"
 )
 
 processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
@@ -91,7 +94,7 @@ def batch_inference(image_folder: str, output_file: str, batch_size: int = 16):
     print(f"Results saved to {output_file}")
 
 # Define parameters
-image_folder = "/home/rzr2kor/Vehicle_3885/Vehicle_3885" # Change path to image files
+image_folder = os.environ["AZUREML_DATAREFERENCE_VDEEPINGESTPROD"] + "/object_retrieval/AL_Data/Vehicle_3885" # Change path to image files
 output_file = "results_batch_qwen.json" # Results file path 
 
 # Run batch inference
