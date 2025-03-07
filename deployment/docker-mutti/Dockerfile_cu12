@@ -1,0 +1,90 @@
+# ============================================================================================================
+# C O P Y R I G H T
+# ------------------------------------------------------------------------------------------------------------
+# \copyright (C) 2024 Robert Bosch GmbH and Cariad SE. All rights reserved.
+# ============================================================================================================
+FROM rayproject/ray:2.35.0-py310-cpu
+# Since modern deep learning libaries come with their own cuda, cudnn, etc., we avoid using the nvidia cuda image
+# and reduce docker image size. If you still prefer to use a nvidia cuda image, you can use the one below:
+# FROM rayproject/ray:2.35.0-py310-cu123  (this is based on nvidia cuda image)
+
+# This Dockerfile is based on the official Ray Docker image with user and miniconda setup.
+# For details check the Ray dockerfiles: https://github.com/ray-project/ray/blob/master/docker/base-deps/Dockerfile
+
+ARG USERNAME=ray
+ARG GROUP=users
+ARG UID=1000
+ARG GID=100
+ARG TENANT_ID=a6c60f0f-76aa-4f80-8dba-092771d439f0
+
+USER root
+
+### Install some custom software that is missing from the regular container
+RUN apt-get update ; DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    tree \
+    bash-completion \
+    file \
+    curl \
+    # required by opencv (cv2)
+    libgl1 \
+    libglib2.0-0 \
+    libtbb-dev \
+    openmpi-bin \
+    openmpi-common \
+    libopenmpi-dev \
+    openssh-server
+
+# Install Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Create a working directory, mkdir instruction is needed so our USER becomes the owner.
+# Even though WORKDIR would create the non-existing directory, its owner would be ROOT.
+# ENV REPO /home/$USERNAME/repo
+# RUN mkdir -p $REPO /outputs
+# WORKDIR $REPO
+
+# # Copy repo code to image and update permissions
+# COPY --chown=$UID:$GID . $REPO/
+
+# RUN ln -s $REPO/models /models && \
+#     ln -s $REPO/config /config && \
+#     chown $UID:$GID $REPO/ /config /models /outputs
+
+
+# Set home to the user's home directory
+#ENV HOME=/home/$USERNAME \
+#	PATH=/home/$USERNAME/.local/bin:$PATH
+
+# Switch to standard user (uid 1000) which is also the user expected by our Argo dataloop.
+USER $UID
+
+# Install CUDA with conda and cudnn, torch, tensorflow with pip
+RUN pip --no-cache-dir install --upgrade pip ipython ipykernel setuptools && \
+    pip --no-cache-dir install nvidia-cudnn-cu11==8.9.6.50 tensorflow[and-cuda]==2.15.* && \
+    pip --no-cache-dir install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118 && \
+    pip --no-cache-dir install azure-cli-core==2.58.0 azureml-core && \
+    pip --no-cache-dir install accelerate==1.4.0 transformers==4.48.2 vllm==0.7.1 qwen-vl-utils==0.0.10 && \
+    pip --no-cache-dir install numpy==1.26.4 pillow==10.4.0 jupyter notebook
+
+# Install repo and requirements using ADA artificatory
+# RUN --mount=type=secret,id=PIP_INDEX_URL,uid=1000 \
+#     --mount=type=secret,id=PIP_EXTRA_INDEX_URL,uid=1000 \
+#     export PIP_INDEX_URL=$(cat /run/secrets/PIP_INDEX_URL) && \
+#     export PIP_EXTRA_INDEX_URL=$(cat /run/secrets/PIP_EXTRA_INDEX_URL) && \
+#     pip --no-cache-dir install .[test]
+
+# Ensure the correct LD_LIBRARY_PATH is set in Conda environments
+ENV CONDA_PREFIX=$HOME/anaconda3
+RUN mkdir -p $CONDA_PREFIX/etc/conda/activate.d \
+             $CONDA_PREFIX/etc/conda/deactivate.d && \
+
+    # Create the activation script
+    printf '#!/bin/sh\nCUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))\n' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh && \
+    printf 'export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH\n' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh && \
+    printf 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/:$CUDNN_PATH/lib\n' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh && \
+    chmod +x $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh && \
+
+    # Create the deactivation script
+    printf '#!/bin/sh\nexport LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH\n' >> $CONDA_PREFIX/etc/conda/deactivate.d/env_vars.sh && \
+    printf 'unset OLD_LD_LIBRARY_PATH\n' >> $CONDA_PREFIX/etc/conda/deactivate.d/env_vars.sh && \
+    chmod +x $CONDA_PREFIX/etc/conda/deactivate.d/env_vars.sh

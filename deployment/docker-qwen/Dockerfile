@@ -10,7 +10,7 @@
 #  of a patent, utility model or design.
 # ==============================================================================
 
-FROM FROM ubuntu:22.04
+FROM mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:20230509.v1@sha256:21a5aff01e75574d94cd25802026a9ac5be1936dc2afe2973537f2c47abd4bc5
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
@@ -28,7 +28,13 @@ WORKDIR /app
 COPY requirements.txt .
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir accelerate==1.4.0  && \
+    pip3 install --no-cache-dir torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 && \
+    pip3 install --no-cache-dir transformers==4.48.2 && \
+    pip3 install --no-cache-dir vllm==0.7.1 && \
+    pip3 install --no-cache-dir numpy==1.26.4 pillow==10.4.0 && \
+    pip3 install --no-cache-dir qwen-vl-utils==0.0.10 && \
+    pip3 install --no-cache-dir ray==2.42.0
 
 COPY . .
 
