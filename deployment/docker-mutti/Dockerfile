@@ -34,6 +34,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openmpi-common \
     libopenmpi-dev \
     openssh-server
+
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcudnn8_8.7.0.84-1+cuda11.8_amd64.deb && \
+    dpkg -i libcudnn8_8.7.0.84-1+cuda11.8_amd64.deb && \
+    rm libcudnn8_8.7.0.84-1+cuda11.8_amd64.deb
     
 
 # Install Azure CLI
@@ -44,11 +48,14 @@ USER $UID
 # Install cudatoolkit with conda (for onnxruntime-gpu support) and cudnn, torch, tensorflow with pip
 RUN conda install -y cudatoolkit=11.8 && conda clean --all --yes
 RUN pip --no-cache-dir install --upgrade pip ipython setuptools packaging && \
-    pip --no-cache-dir install nvidia-cudnn-cu11==8.7.0.84 tensorflow[and-cuda]==2.14.* && \
+    pip --no-cache-dir install tensorflow[and-cuda]==2.14.* && \
     pip --no-cache-dir install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118 && \
     pip --no-cache-dir install azure-cli-core==2.58.0 azureml-core && \
-    pip --no-cache-dir install accelerate==1.4.0 transformers==4.48.2 vllm==0.7.1 qwen-vl-utils==0.0.10 && \
-    pip --no-cache-dir install numpy==1.26.4 pillow==10.4.0 jupyter notebook
+    pip --no-cache-dir install accelerate==1.4.0 transformers==4.48.2 qwen-vl-utils==0.0.10 && \
+    pip --no-cache-dir install pillow==10.4.0 jupyter notebook && \
+    pip --no-cache-dir install https://github.com/vllm-project/vllm/releases/download/v0.7.3/vllm-0.7.3+cu118-cp38-abi3-manylinux1_x86_64.whl && \
+    pip --no-cache-dir install -U --force-reinstall xformers==0.0.28.post3 --index-url https://download.pytorch.org/whl/cu118 && \
+    pip --no-cache-dir install numpy==1.26.4
 
 # DOCKER-LAYER-CACHE works only for the instructions before copying the repo code.
 # ============================================================================================================
