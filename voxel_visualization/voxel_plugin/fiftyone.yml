@@ -1,9 +1,0 @@
-name: "voxel_plugin"
-type: plugin
-author: "Aryn"
-version: 1.0.0
-description: "Custom plugin to allow user to re-run LLM inference on images with custom prompts"
-fiftyone:
-  version: ">=0.22"
-operators:
-  - rerun_llm

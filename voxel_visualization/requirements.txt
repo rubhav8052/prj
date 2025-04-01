@@ -1,7 +1,0 @@
-fiftyone==1.4.0
-fiftyone-db==0.4.0
-requests
-fastapi
-uvicorn
-pillow 
-pydantic
