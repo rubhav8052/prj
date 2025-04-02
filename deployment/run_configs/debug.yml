@@ -1,8 +1,8 @@
-ENV: "muttiv4:7"
+ENV: "muttiv4"
 EXPERIMENT: "mutti_testing"
 COMPUTE: "gpupoolt4nc16as"
 
-RUN_NAME: "ray_2_31" #None
+RUN_NAME: "qwen" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
@@ -10,7 +10,7 @@ SCRIPT_ARGUMENTS:
 
 DEBUG: TRUE
 SRC: "."
-ENTRY_SCRIPT: "src/utils/debug.py"
-# ENTRY_SCRIPT: "notebooks/qwen_vllm_batch_inference.py"
+# ENTRY_SCRIPT: "src/utils/debug.py"
+ENTRY_SCRIPT: "notebooks/qwen_vllm_batch_inference.py"
 
-# ENTRY_SCRIPT: "tools/ios/ingest.py"
+# ENTRY_SCRIPT: "notebooks/deepseek_vllm_batch_inference.py"

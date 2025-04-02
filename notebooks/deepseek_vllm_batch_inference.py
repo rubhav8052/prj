@@ -12,7 +12,9 @@ model_name = "deepseek-ai/deepseek-vl2-tiny"
 llm = LLM(model=model_name,
               max_model_len=4096,
               max_num_seqs=32, #batch size 
-              hf_overrides={"architectures": ["DeepseekVLV2ForCausalLM"]})
+              hf_overrides={"architectures": ["DeepseekVLV2ForCausalLM"]},
+              dtype="float16"
+              )
 
 processor = AutoProcessor.from_pretrained(model_name)
 

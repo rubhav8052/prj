@@ -17,15 +17,15 @@ ENV TZ=Etc/UTC
 
 RUN apt-get update && apt-get install -y \
     git \
-    python3.11 \
+    python3.10 \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 
 WORKDIR /app
 
-COPY requirements.txt .
+# COPY requirements.txt .
 
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir accelerate==1.4.0  && \

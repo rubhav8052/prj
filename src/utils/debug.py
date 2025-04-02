@@ -18,15 +18,20 @@ def setup_env_paths():
 environment = setup_env_paths()
 home_directory = os.path.expanduser('~')
 print(home_directory)
-with open(home_directory+'/.bashrc', 'r') as f:
-    bashrc = f.read()
-    for key in environment:
-        if key not in bashrc:
-            if bashrc[-1]!='\n':
-                bashrc += '\n'
+if os.path.exists(home_directory+'/.bashrc'):
+    with open(home_directory+'/.bashrc', 'r') as f:
+        bashrc = f.read()
+else:
+    bashrc = ''
+for key in environment:
+    if key not in bashrc:
+        if len(bashrc)==0 or bashrc[-1]!='\n':
+            bashrc += '\n'
             bashrc += f'export {key}="{environment[key]}"'
 with open(home_directory+'/.bashrc', 'w') as f:
     f.write(bashrc)
+
+# +
 with open('/etc/environment', 'r') as f:
     bashrc = f.read()
     for key in environment:
@@ -36,7 +41,8 @@ with open('/etc/environment', 'r') as f:
             bashrc += f'{key}="{environment[key]}"'
 with open('/etc/environment', 'w') as f:
     f.write(bashrc)
+
+time.sleep(100000)
 # except:
 #     pass
-    
-time.sleep(10000000)
+
