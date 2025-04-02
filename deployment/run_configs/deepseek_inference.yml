@@ -1,0 +1,13 @@
+ENV: "muttiv4"
+EXPERIMENT: "mutti_testing"
+COMPUTE: "gpupoolt4nc16as"
+
+RUN_NAME: "deepseek_inference" #None
+NODES: 1
+
+SCRIPT_ARGUMENTS:
+  model: "deepseek"
+
+DEBUG: TRUE
+SRC: "."
+ENTRY_SCRIPT: "src/scripts/run_inference.py"
