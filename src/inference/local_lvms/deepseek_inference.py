@@ -15,7 +15,6 @@ from PIL import Image
 from vllm import LLM
 from src.inference.local_lvms.base_inference import BaseInference
 from src.config.inference_config import DEEPSEEK_CONFIG
-from src.prompts.vehicle_prompt import vehicle_prompt
 
 class DeepseekInference(BaseInference):
     def _initialize_llm(self) -> LLM:
@@ -29,7 +28,8 @@ class DeepseekInference(BaseInference):
 
     def prepare_batch(self, image_files):
         images = [Image.open(img).convert("RGB") for img in image_files]
-        prompts = [f"<|User|>: <image>\n {vehicle_prompt} \n<|Assistant|>:" for _ in image_files]
+        prompt = self.config.get("prompt", "")
+        prompts = [f"<|User|>: <image>\n {prompt} \n<|Assistant|>:" for _ in image_files]
         
         return [
             {"prompt": p, "multi_modal_data": {"image": [img]}} 

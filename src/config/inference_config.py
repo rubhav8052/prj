@@ -10,7 +10,9 @@ DEEPSEEK_CONFIG = {
     "max_model_len": 4096,
     "max_num_seqs": 32,
     "batch_size": 5,
-    "output_file": "outputs/results_batch_deepseek.json"
+    "output_file": "outputs/results_batch_deepseek.json",
+    "prompt_module": "src.prompts.vehicle_prompt",
+    "prompt_variable": "vehicle_prompt"
 }
 
 QWEN_CONFIG = {
@@ -19,7 +21,9 @@ QWEN_CONFIG = {
     "max_model_len": 4096,
     "max_num_seqs": 5,
     "batch_size": 16,
-    "output_file": "outputs/results_batch_qwen.json"
+    "output_file": "outputs/results_batch_qwen.json",
+    "prompt_module": "src.prompts.vehicle_prompt",
+    "prompt_variable": "vehicle_prompt"
 }
 
 # Common sampling parameters

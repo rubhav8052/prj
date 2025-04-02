@@ -15,7 +15,6 @@ from PIL import Image
 from vllm import LLM
 from src.inference.local_lvms.base_inference import BaseInference
 from src.config.inference_config import QWEN_CONFIG
-from src.prompts.vehicle_prompt import vehicle_prompt
 from qwen_vl_utils import process_vision_info
 
 class QwenInference(BaseInference):
@@ -30,16 +29,18 @@ class QwenInference(BaseInference):
 
     def prepare_batch(self, image_files):
         batch_data = []
+        prompt = self.config.get("prompt", "")
+        
         for img_path in image_files:
             messages = [
                 {"role": "system", "content": "You are a helpful assistant used for labelling Vehicle Images."},
                 {"role": "user", "content": [
                     {"type": "image", "image": img_path}, 
-                    {"type": "text", "text": vehicle_prompt}
+                    {"type": "text", "text": prompt}
                 ]}
             ]
 
-            prompt = self.processor.apply_chat_template(
+            processed_prompt = self.processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
 
@@ -47,7 +48,7 @@ class QwenInference(BaseInference):
                          else process_vision_info(messages)[0])
 
             batch_data.append({
-                "prompt": prompt,
+                "prompt": processed_prompt,
                 "multi_modal_data": {"image": [image_data]}
             })
 
