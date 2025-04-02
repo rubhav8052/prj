@@ -2,12 +2,12 @@ ENV: "muttiv4"
 EXPERIMENT: "mutti_testing"
 COMPUTE: "gpupoolt4nc16as"
 
-RUN_NAME: "debug" #None
+RUN_NAME: "qwen_inference" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: None
+  model: "qwen"
 
 DEBUG: TRUE
 SRC: "."
-ENTRY_SCRIPT: "src/utils/debug.py"
+ENTRY_SCRIPT: "src/scripts/run_inference.py"
