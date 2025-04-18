@@ -32,9 +32,10 @@ if __name__ == '__main__':
     exp = Experiment(workspace=ws, name=cfg["EXPERIMENT"])
 
     script_arguments = []
-    for key, value in cfg["SCRIPT_ARGUMENTS"].items():
-        script_arguments.append('--'+key.lower())
-        script_arguments.append(value)
+    if cfg["SCRIPT_ARGUMENTS"]:
+        for key, value in cfg["SCRIPT_ARGUMENTS"].items():
+            script_arguments.append('--'+key.lower())
+            script_arguments.append(value)
 
     src = ScriptRunConfig(
         source_directory=source_directory,
@@ -42,7 +43,7 @@ if __name__ == '__main__':
         compute_target=cfg["COMPUTE"],
         arguments=script_arguments,
         environment=curated_env,
-        distributed_job_config=MpiConfiguration(process_count_per_node=1, node_count=cfg["NODES"])
+        distributed_job_config=MpiConfiguration(process_count_per_node=1, node_count=cfg["NODES"]) if cfg["NODES"]>1 else None
     )
 
     input_ds = [
@@ -58,8 +59,8 @@ if __name__ == '__main__':
     
     if cfg["DEBUG"]:
         src.run_config.services = {
-            'VSCode': ApplicationEndpointConfiguration('VSCode'),
-            'Jupyter': ApplicationEndpointConfiguration('Jupyter', port=8722),           
+            # 'VSCode': ApplicationEndpointConfiguration('VSCode'),
+            'Jupyter': ApplicationEndpointConfiguration('Jupyter', port=8722),                                  
         }
 
     run = exp.submit(config=src)
