@@ -10,16 +10,19 @@
 #  of a patent, utility model or design.
 # ============================================================
 
-ENV: "swift"
-EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoola100"
+FROM python:3.10-slim
 
-RUN_NAME: "deepseek_vehicle_type_inference" #None
-NODES: 1
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
 
-SCRIPT_ARGUMENTS:
-  CONFIG: src/config/inference_configs/deepseek-vehicle_type.py
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libgl1 \
+    openssh-server \
+    && rm -rf /var/lib/apt/lists/*
 
-DEBUG: TRUE
-SRC: "."
-ENTRY_SCRIPT: "src/scripts/run_swift_inference.py"
+
+# Install FiftyOne
+RUN pip install --no-cache-dir fiftyone azureml-core jupyter notebook ipykernel

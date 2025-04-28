@@ -14,3 +14,5 @@
 Configuration management for the auto-labeling system.
 Includes settings for models, services, and environment variables.
 """
+
+# This file makes the 'config' directory a Python package.

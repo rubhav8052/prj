@@ -11,15 +11,15 @@
 # ============================================================
 
 ENV: "swift"
-EXPERIMENT: "swift_inference"
+EXPERIMENT: "swift_training"
 COMPUTE: "gpupoola100"
 
-RUN_NAME: "deepseek_vehicle_type_inference" #None
+RUN_NAME: "qwen2b_occlusion_training" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/inference_configs/deepseek-vehicle_type.py
+  CONFIG: src/config/training_configs/qwen2b-occlusion.py 
 
 DEBUG: TRUE
 SRC: "."
-ENTRY_SCRIPT: "src/scripts/run_swift_inference.py"
+ENTRY_SCRIPT: "src/scripts/run_training.py"

@@ -10,16 +10,17 @@
 #  of a patent, utility model or design.
 # ============================================================
 
-ENV: "swift"
+ENV: "fiftyone"
 EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoola100"
+COMPUTE: "cpupool8core300"
 
-RUN_NAME: "deepseek_vehicle_type_inference" #None
+RUN_NAME: "fiftyone_test" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/inference_configs/deepseek-vehicle_type.py
+  source-dir: "vehicle_first_exps"
+  timeout: 1000 # in seconds
 
-DEBUG: TRUE
-SRC: "."
-ENTRY_SCRIPT: "src/scripts/run_swift_inference.py"
+DEBUG: True
+SRC: 'src/utils/fiftyone'
+ENTRY_SCRIPT: "launch.py"

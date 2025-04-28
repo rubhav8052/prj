@@ -11,15 +11,15 @@
 # ============================================================
 
 ENV: "swift"
-EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoola100"
+EXPERIMENT: "swift_training_data_prep"
+COMPUTE: "cpupool8core300"
 
-RUN_NAME: "deepseek_vehicle_type_inference" #None
+RUN_NAME: "VLM data prep"
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/inference_configs/deepseek-vehicle_type.py
+  CONFIG: None
 
-DEBUG: TRUE
+DEBUG: False
 SRC: "."
-ENTRY_SCRIPT: "src/scripts/run_swift_inference.py"
+ENTRY_SCRIPT: "src/scripts/prepare_dataset.py"

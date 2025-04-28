@@ -1,0 +1,129 @@
+# ==============================================================================
+#  C O P Y R I G H T
+# ------------------------------------------------------------------------------
+#  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
+#
+#  The reproduction, distribution and utilization of this file as
+#  well as the communication of its contents to others without express
+#  authorization is prohibited. Offenders will be held liable for the
+#  payment of damages. All rights reserved in the event of the grant
+#  of a patent, utility model or design.
+# ==============================================================================
+
+import os
+import sys
+from swift.llm import sft_main, SftArguments
+from swift.utils import get_logger
+
+from src.config.training_config import TrainingConfig
+
+logger = get_logger()
+
+def run_swift_sft(config: TrainingConfig):
+    """Runs Swift SFT (Supervised Fine-Tuning) based on the configuration."""
+    print("Starting Swift SFT training...")
+    print(f"   Model ID: {config.model_id}")
+    print(f"   Train Datasets: {config.train_dataset_paths}")
+    print(f"   Val Datasets: {config.val_dataset_paths}")
+    print(f"   Output Dir: {config.output_dir}")
+    print(f"   Train Type: {config.train_type}")
+    print(f"   Freeze ViT: {config.freeze_vit}")
+    print(f"   Freeze LLM Ratio: {config.freeze_parameters_ratio}")
+    print(f"   Batch Size: {config.batch_size}")
+    print(f"   Epochs: {config.num_train_epochs}")
+    print(f"   Dtype: {config.torch_dtype}")
+    print(f"   Max Length: {config.max_length}")
+    print(f"   Learning Rate: {config.learning_rate}")
+    print(f"   Gradient Accumulation: {config.gradient_accumulation_steps}")
+    print(f"   Deepspeed: {config.deepspeed}")
+    print(f"   Extra Swift Args: {config.extra_swift_args}")
+
+
+    # Validate dataset paths
+    all_datasets = config.train_dataset_paths + config.val_dataset_paths
+    if not all_datasets:
+         raise ValueError("At least one training or validation dataset path must be provided.")
+
+    for d_path in all_datasets:
+        if not os.path.exists(d_path):
+             raise FileNotFoundError(f"Dataset file not found: {d_path}")
+
+    os.makedirs(config.output_dir, exist_ok=True)
+
+    # --- Prepare Swift SftArguments ---
+    # Map TrainingConfig fields to SftArguments
+    # Note: Some names might differ slightly or require specific formatting
+    swift_args = {
+        "model_type": config.model_id.split('/')[1] if '/' in config.model_id else config.model_id, # Infer model type from ID
+        "model_id_or_path": config.model_id,
+        "sft_type": config.train_type,
+        "dataset": config.train_dataset_paths, # Swift expects a list for 'dataset'
+        "eval_dataset": config.val_dataset_paths, # Swift expects a list for 'eval_dataset'
+        "output_dir": config.output_dir,
+        "num_train_epochs": config.num_train_epochs,
+        "max_length": config.max_length,
+        "batch_size": config.batch_size,
+        "gradient_accumulation_steps": config.gradient_accumulation_steps,
+        "learning_rate": config.learning_rate,
+        "save_strategy": config.save_strategy,
+        "save_steps": config.save_steps if config.save_strategy == 'steps' else None, # Only set save_steps if strategy is 'steps'
+        "save_total_limit": 3, # Keep last 3 checkpoints
+        "logging_steps": 50, # Log every 50 steps (adjust as needed)
+        "eval_steps": 500, # Evaluate every 500 steps (adjust as needed)
+        "lora_rank": config.lora_rank if config.train_type == 'lora' else 8, # Default LoRA rank if not specified
+        "lora_alpha": config.lora_rank * 2 if config.train_type == 'lora' else 16, # Common practice alpha = 2*rank
+        "lora_dropout_p": 0.05, # Default dropout
+        "lora_target_modules": 'ALL', # Target all available modules for LoRA
+        "gradient_checkpointing": True, # Enable gradient checkpointing to save memory
+        "torch_dtype": config.torch_dtype,
+        "fp16": config.torch_dtype == 'float16',
+        "bf16": config.torch_dtype == 'bfloat16',
+        "deepspeed": config.deepspeed,
+        "report_to": ["tensorboard"], # Report metrics to TensorBoard
+        "dataloader_num_workers": 1, # Adjust based on system capabilities
+        "eval_strategy": "steps" if config.val_dataset_paths else "no", # Evaluate if val data provided
+        "load_best_model_at_end": True if config.val_dataset_paths else False, # Load best model if evaluating
+        "metric_for_best_model": "eval_loss" if config.val_dataset_paths else None, # Use eval loss to find best model
+        "greater_is_better": False, # Lower eval loss is better
+        "neftune_noise_alpha": 5, # Add noise for potentially better generalization
+        "optim": "adamw_torch", # Use AdamW optimizer
+        "lr_scheduler_type": "cosine", # Use cosine learning rate scheduler
+        "warmup_ratio": 0.03, # Warmup ratio
+        "weight_decay": 0.01, # Weight decay
+        "max_grad_norm": 1.0, # Gradient clipping
+        "use_flash_attn": config.attn_impl == 'flash_attn', # Enable Flash Attention if specified
+        # Add extra arguments from config
+        **config.extra_swift_args
+    }
+
+    # --- Handle Vision-Language Model Specific Args ---
+    if "vl" in config.model_id.lower() or "vision" in config.model_id.lower():
+        swift_args["lazy_preprocess"] = True # Recommended for VLMs
+        swift_args["vl_freeze_vit"] = config.freeze_vit
+        if config.freeze_parameters_ratio is not None:
+            swift_args["freeze_parameters"] = config.freeze_parameters_ratio
+        # Add other VLM specific args if needed, e.g., vl_resampler_type
+
+    # --- Instantiate SftArguments ---
+    try:
+        arguments = SftArguments(**swift_args)
+    except TypeError as e:
+        logger.error(f"Error creating SftArguments. Check for invalid parameters: {e}")
+        logger.error(f"Provided Swift Args: {swift_args}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred creating SftArguments: {e}")
+        logger.error(f"Provided Swift Args: {swift_args}")
+        sys.exit(1)
+
+
+    # --- Run Swift SFT Main ---
+    try:
+        logger.info(f"Launching sft_main with arguments: {arguments}")
+        results = sft_main(arguments)
+        logger.info(f"Swift SFT finished. Results: {results}")
+        print("Swift SFT training completed successfully.")
+    except Exception as e:
+        logger.error(f"Swift SFT training failed with an exception: {e}", exc_info=True)
+        print(f"Error during Swift SFT training: {e}")
+        sys.exit(1) 

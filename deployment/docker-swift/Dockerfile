@@ -24,22 +24,28 @@ ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/mtl_onnx
 RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     python=3.10.12 \
     pip=23.3.1 \
-    pytorch==2.1.2 \
-    torchvision==0.16.2 \
-    torchaudio==2.1.2 \
-    pytorch-cuda=11.8 \
+    nvidia/label/cuda-12.4.0::cuda-toolkit \
+    git \
     -c anaconda -c pytorch -c nvidia -c conda-forge -y
 
 # Prepend path to AzureML conda environment
 ENV PATH $AZUREML_CONDA_ENVIRONMENT_PATH/bin:$PATH
 
 # Install pip dependencies
+RUN pip install tensorboard
 RUN pip install requests==2.28.2 tqdm==4.65.0 rich==13.4.2
 RUN pip install -U jupyterlab jupyter ipywidgets ipykernel
 RUN pip install wheel opencv-python dynamic-yaml pandas scikit-image torch_kmeans
 RUN pip install azureml-core
 RUN pip install azure-storage-blob
-RUN pip install onnx==1.17.0 onnxruntime-gpu==1.17 onnxsim==0.4.35 transformers==4.38.1
+RUN pip install onnx==1.17.0 onnxruntime-gpu==1.17 onnxsim==0.4.35
+RUN pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+RUN pip install auto_gptq optimum -U
+RUN pip install ms-swift deepspeed flash-attn pandas scikit-learn seaborn vllm==0.7.1 timm
+
+RUN pip install qwen-vl-utils==0.0.10 transformers==4.48.2 -t qwen_libs/
+RUN pip install transformers==4.41.0 peft==0.11.0 -t deepseek_libs/
+RUN rm -rf /deepseek_libs/torch*
                           
 # This is needed for mpi to locate libpython
 ENV LD_LIBRARY_PATH $AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH

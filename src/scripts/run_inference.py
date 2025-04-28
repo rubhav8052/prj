@@ -1,9 +1,19 @@
+# ==============================================================================
+#  C O P Y R I G H T
+# ------------------------------------------------------------------------------
+#  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
+#
+#  The reproduction, distribution and utilization of this file as
+#  well as the communication of its contents to others without express
+#  authorization is prohibited. Offenders will be held liable for the
+#  payment of damages. All rights reserved in the event of the grant
+#  of a patent, utility model or design.
+# ==============================================================================
+
 import argparse
 import os
 import importlib
 from src.config.inference_config import IMAGE_FOLDER, DEEPSEEK_CONFIG, QWEN_CONFIG
-from src.inference.local_lvms.deepseek_inference import DeepseekInference
-from src.inference.local_lvms.qwen_inference import QwenInference
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run inference with selected VLM model")
@@ -56,6 +66,8 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     
     if args.model in ["deepseek", "all"]:
+        from src.inference.local_lvms.deepseek_inference import DeepseekInference
+        
         print("\n=== Running Deepseek Inference ===")
         config = DEEPSEEK_CONFIG.copy()
         config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
@@ -75,6 +87,8 @@ def main():
             print("Failed to load prompt for Deepseek model. Skipping.")
     
     if args.model in ["qwen", "all"]:
+        from src.inference.local_lvms.qwen_inference import QwenInference
+        
         print("\n=== Running Qwen Inference ===")
         config = QWEN_CONFIG.copy()
         config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
