@@ -12,7 +12,7 @@
 
 ENV: "swift"
 EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoolt4nc16as"
+COMPUTE: "gpupoolv100"
 
 RUN_NAME: "debug" #None
 NODES: 1

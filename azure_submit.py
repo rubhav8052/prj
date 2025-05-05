@@ -33,9 +33,9 @@ if __name__ == '__main__':
         cfg = yaml.safe_load(stream)
 
     source_directory = f'{os.path.dirname(os.path.abspath(__file__))}/{cfg["SRC"]}'
-    input_ds_names = ['vdeepingestprod', 'mtl_workspace', 'cliff_image_dump_qa', 'cliff_image_dump_prod', 'cliff_image_dump_dev', 'cliff_request_dump_prod', 'cache']
+    input_ds_names = ['vdeepingestprod']
 
-    ws = Workspace(workspace_name='object_retrieval', subscription_id='c4f1c7f3-9206-409f-a333-5b89a516e5dd', resource_group='vdeep-ct-prod')
+    ws = Workspace(workspace_name='offline_perception', subscription_id='c4f1c7f3-9206-409f-a333-5b89a516e5dd', resource_group='vdeep-ct-prod')
     ws.get_details()
 
     version = int(cfg["ENV"].split(':')[1]) if ':' in cfg["ENV"] else None

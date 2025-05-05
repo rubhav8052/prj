@@ -12,7 +12,7 @@
 
 ENV: "swift"
 EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoola100"
+COMPUTE: "gpupool1A100"
 
 RUN_NAME: "deepseek_export" #None
 NODES: 1

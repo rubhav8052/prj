@@ -12,7 +12,7 @@
 
 ENV: "swift"
 EXPERIMENT: "swift_training_data_prep"
-COMPUTE: "cpupool8core300"
+COMPUTE: "cpupool16core600"
 
 RUN_NAME: "VLM data prep"
 NODES: 1
