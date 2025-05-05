@@ -25,7 +25,7 @@ class ExportConfig:
     # Dataset path (JSONL) used for calibration (e.g., training set)
     dataset_path: str = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+"/attribute_labeling/temp/vehicle/datasets/drawn_green_box_with_context/occlusion_train_v1.jsonl"
     # Directory to save the quantized model
-    output_dir: str = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+"/attribute_labeling/temp/vehicle/occlusion/deepseek/occlusion/"
+    output_dir: str = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+"/attribute_labeling/vehicle/occlusion/exported/deepseek/"
     # Quantization bits (e.g., 4, 8)
     # quant_bits: int = 4
     # Quantization method (e.g., 'gptq', 'awq')

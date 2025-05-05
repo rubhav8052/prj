@@ -25,7 +25,7 @@ class DataPrepConfig:
     # Base path for resolving relative image paths within CSVs
     image_base_dir: str = os.environ['AZUREML_DATAREFERENCE_VDEEPINGESTPROD']+'/object_retrieval/AL_data/vehicle_sampled/'
     # Directory to save output JSONL files
-    output_dir: str = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+'/attribute_labeling/temp/vehicle/datasets/drawn_green_box_with_context/'
+    output_dir: str = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+'/attribute_labeling/vehicle/datasets/drawn_green_box_with_context/'
     # Column names from CSV
     attribute_col: str = "occlusion"
     # Prompt file for attribute task (used if generating attribute dataset)
