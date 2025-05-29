@@ -10,13 +10,14 @@
 #  of a patent, utility model or design.
 # ==============================================================================
 
+from dataclasses import asdict
 import os
 import sys
 from swift.llm import sft_main, SftArguments
 from swift.utils import get_logger
 
 from src.config.training_config import TrainingConfig
-
+from src.utils.aml_utils import register_aml_model
 logger = get_logger()
 
 def run_swift_sft(config: TrainingConfig):
@@ -127,3 +128,36 @@ def run_swift_sft(config: TrainingConfig):
         logger.error(f"Swift SFT training failed with an exception: {e}", exc_info=True)
         print(f"Error during Swift SFT training: {e}")
         sys.exit(1) 
+        
+    print("\nAttempting to register the exported model in Azure ML...")
+    try:
+        # Convert config dataclass to dict for tags, ensuring serializability
+        tags_dict = {}
+        for key, value in asdict(config).items():
+                # Convert lists/dicts to strings, handle None, etc.
+                if isinstance(value, (list, dict)):
+                    tags_dict[key] = str(value)
+                    tags_dict[key] = 'workspaceblobstore'+tags_dict[key].split('workspaceblobstore')[-1]
+                elif value is None:
+                    tags_dict[key] = "None"
+                else:
+                    tags_dict[key] = str(value) # Ensure all values are strings
+
+        # Generate a model name (example: qwen-7b-instruct-occlusion-merged)
+        model_base_name = config.model.split('/')[-1].lower().replace('_', '-')
+        # Try to get a meaningful name part from the output path
+        output_path_parts = config.output_dir.strip('/').split('/')
+        task_or_detail = output_path_parts[-1] if len(output_path_parts) > 1 else "exported"
+        model_name = f"{model_base_name}-{task_or_detail}"
+
+        register_aml_model(
+            model_path=config.output_dir,
+            tags=tags_dict,
+            model_name=model_name
+        )
+    except ImportError:
+            print("Warning: Azure ML SDK not found or not configured. Skipping model registration.")
+    except Exception as reg_e:
+        print(f"Error during Azure ML model registration: {reg_e}")
+        # Decide if this error should cause the script to exit
+        # sys.exit(1)

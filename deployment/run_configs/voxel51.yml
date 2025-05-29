@@ -12,7 +12,7 @@
 
 ENV: "fiftyone"
 EXPERIMENT: "swift_inference"
-COMPUTE: "cpupool8core300"
+COMPUTE: "cpupool4core"
 
 RUN_NAME: "fiftyone_test" #None
 NODES: 1
