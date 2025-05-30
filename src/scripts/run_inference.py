@@ -12,27 +12,28 @@
 
 import argparse
 import os
+import sys
 import importlib
 from src.config.inference_config import IMAGE_FOLDER, DEEPSEEK_CONFIG, QWEN_CONFIG
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run inference with selected VLM model")
     parser.add_argument(
-        "--model", 
-        type=str, 
-        choices=["deepseek", "qwen", "all"], 
+        "--model",
+        type=str,
+        choices=["deepseek", "qwen", "all"],
         default="all",
         help="Model to run inference with (deepseek, qwen, or all)"
     )
     parser.add_argument(
-        "--image_folder", 
-        type=str, 
+        "--image_folder",
+        type=str,
         default=IMAGE_FOLDER,
         help="Path to folder containing images"
     )
     parser.add_argument(
-        "--output_dir", 
-        type=str, 
+        "--output_dir",
+        type=str,
         default="outputs",
         help="Directory to save results"
     )
@@ -61,22 +62,24 @@ def load_prompt(module_path, variable_name):
 
 def main():
     args = parse_args()
-    
+
     # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
-    
+
     if args.model in ["deepseek", "all"]:
+        sys.path.insert(0, '/deepseek_libs')
+
         from src.inference.local_lvms.deepseek_inference import DeepseekInference
-        
+
         print("\n=== Running Deepseek Inference ===")
         config = DEEPSEEK_CONFIG.copy()
         config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
-        
+
         # Override prompt if specified in arguments
         if args.prompt_module and args.prompt_variable:
             config["prompt_module"] = args.prompt_module
             config["prompt_variable"] = args.prompt_variable
-        
+
         # Load the prompt
         prompt = load_prompt(config["prompt_module"], config["prompt_variable"])
         if prompt:
@@ -85,19 +88,21 @@ def main():
             deepseek.batch_inference(args.image_folder)
         else:
             print("Failed to load prompt for Deepseek model. Skipping.")
-    
+
     if args.model in ["qwen", "all"]:
+        sys.path.insert(0, '/qwen_libs')
+
         from src.inference.local_lvms.qwen_inference import QwenInference
-        
+
         print("\n=== Running Qwen Inference ===")
         config = QWEN_CONFIG.copy()
         config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
-        
+
         # Override prompt if specified in arguments
         if args.prompt_module and args.prompt_variable:
             config["prompt_module"] = args.prompt_module
             config["prompt_variable"] = args.prompt_variable
-        
+
         # Load the prompt
         prompt = load_prompt(config["prompt_module"], config["prompt_variable"])
         if prompt:
@@ -108,4 +113,4 @@ def main():
             print("Failed to load prompt for Qwen model. Skipping.")
 
 if __name__ == "__main__":
-    main() 
+    main()

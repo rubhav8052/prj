@@ -13,7 +13,7 @@
 from dataclasses import asdict
 import os
 import sys
-from swift.llm import sft_main, SftArguments
+from swift.llm import sft_main, TrainArguments
 from swift.utils import get_logger
 
 from src.config.training_config import TrainingConfig
@@ -55,15 +55,13 @@ def run_swift_sft(config: TrainingConfig):
     # Map TrainingConfig fields to SftArguments
     # Note: Some names might differ slightly or require specific formatting
     swift_args = {
-        "model_type": config.model_id.split('/')[1] if '/' in config.model_id else config.model_id, # Infer model type from ID
-        "model_id_or_path": config.model_id,
-        "sft_type": config.train_type,
+        "model": config.model_id,
+        "train_type": config.train_type,
         "dataset": config.train_dataset_paths, # Swift expects a list for 'dataset'
-        "eval_dataset": config.val_dataset_paths, # Swift expects a list for 'eval_dataset'
+        "val_dataset": config.val_dataset_paths, # Swift expects a list for 'eval_dataset'
         "output_dir": config.output_dir,
         "num_train_epochs": config.num_train_epochs,
         "max_length": config.max_length,
-        "batch_size": config.batch_size,
         "gradient_accumulation_steps": config.gradient_accumulation_steps,
         "learning_rate": config.learning_rate,
         "save_strategy": config.save_strategy,
@@ -73,8 +71,6 @@ def run_swift_sft(config: TrainingConfig):
         "eval_steps": 500, # Evaluate every 500 steps (adjust as needed)
         "lora_rank": config.lora_rank if config.train_type == 'lora' else 8, # Default LoRA rank if not specified
         "lora_alpha": config.lora_rank * 2 if config.train_type == 'lora' else 16, # Common practice alpha = 2*rank
-        "lora_dropout_p": 0.05, # Default dropout
-        "lora_target_modules": 'ALL', # Target all available modules for LoRA
         "gradient_checkpointing": True, # Enable gradient checkpointing to save memory
         "torch_dtype": config.torch_dtype,
         "fp16": config.torch_dtype == 'float16',
@@ -92,22 +88,20 @@ def run_swift_sft(config: TrainingConfig):
         "warmup_ratio": 0.03, # Warmup ratio
         "weight_decay": 0.01, # Weight decay
         "max_grad_norm": 1.0, # Gradient clipping
-        "use_flash_attn": config.attn_impl == 'flash_attn', # Enable Flash Attention if specified
         # Add extra arguments from config
         **config.extra_swift_args
     }
 
     # --- Handle Vision-Language Model Specific Args ---
     if "vl" in config.model_id.lower() or "vision" in config.model_id.lower():
-        swift_args["lazy_preprocess"] = True # Recommended for VLMs
-        swift_args["vl_freeze_vit"] = config.freeze_vit
+        swift_args["freeze_vit"] = config.freeze_vit
         if config.freeze_parameters_ratio is not None:
-            swift_args["freeze_parameters"] = config.freeze_parameters_ratio
+            swift_args["freeze_parameters_ratio"] = config.freeze_parameters_ratio
         # Add other VLM specific args if needed, e.g., vl_resampler_type
 
     # --- Instantiate SftArguments ---
     try:
-        arguments = SftArguments(**swift_args)
+        arguments = TrainArguments(**swift_args)
     except TypeError as e:
         logger.error(f"Error creating SftArguments. Check for invalid parameters: {e}")
         logger.error(f"Provided Swift Args: {swift_args}")
@@ -127,8 +121,8 @@ def run_swift_sft(config: TrainingConfig):
     except Exception as e:
         logger.error(f"Swift SFT training failed with an exception: {e}", exc_info=True)
         print(f"Error during Swift SFT training: {e}")
-        sys.exit(1) 
-        
+        sys.exit(1)
+
     print("\nAttempting to register the exported model in Azure ML...")
     try:
         # Convert config dataclass to dict for tags, ensuring serializability

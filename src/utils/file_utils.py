@@ -2,7 +2,7 @@
 #  C O P Y R I G H T
 # ------------------------------------------------------------
 #  Copyright (c) 2025 by Robert Bosch GmbH. All rights reserved.
-# 
+#
 #  The reproduction, distribution and utilization of this file as
 #  well as the communication of its contents to others without express
 #  authorization is prohibited. Offenders will be held liable for the
@@ -11,6 +11,7 @@
 # ============================================================
 
 import os
+import re
 import json
 import glob
 from typing import List, Dict, Any, Optional
@@ -113,4 +114,4 @@ def set_environment_variables(env_vars: Dict[str, str]):
 #         print(f"Warning: Environment file not found at {file_path}")
 #     except Exception as e:
 #         print(f"Error reading environment file {file_path}: {e}")
-#     return envs 
+#     return envs
