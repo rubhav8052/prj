@@ -46,6 +46,8 @@ RUN pip install ms-swift deepspeed flash-attn pandas scikit-learn seaborn vllm==
 RUN pip install qwen-vl-utils==0.0.10 transformers==4.48.2 -t qwen_libs/
 RUN pip install transformers==4.41.0 peft==0.11.0 -t deepseek_libs/
 RUN rm -rf /deepseek_libs/torch*
+RUN rm -rf /deepseek_libs/triton*
+
                           
 # This is needed for mpi to locate libpython
 ENV LD_LIBRARY_PATH $AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH
