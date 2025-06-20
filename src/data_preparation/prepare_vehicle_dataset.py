@@ -19,6 +19,7 @@ import threading
 import json
 from typing import Dict, Any, Tuple, List
 from sklearn.model_selection import train_test_split
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.config.data_prep_config import DataPrepConfig
 from src.utils.file_utils import save_jsonl
@@ -111,40 +112,14 @@ def prepare_single_image(row_tuple: Tuple[int, pd.Series], config: DataPrepConfi
 
 
 def process_images_threaded(df: pd.DataFrame, config: DataPrepConfig):
-    """Processes images in the dataframe using multiple threads."""
+    """Processes images in the dataframe using a thread pool."""
     print(f"Processing {len(df)} images using {config.num_threads} threads...")
-    
-    row_iterator = df.iterrows()
 
-    active_threads = []
-    with tqdm(total=len(df), desc="Processing Images") as pbar:
-        while True:
-            # Start new threads if below limit and rows available
-            while len(active_threads) < config.num_threads:
-                try:
-                    row_tuple = next(row_iterator)
-                    thread = threading.Thread(target=prepare_single_image, args=(row_tuple, config))
-                    thread.start()
-                    active_threads.append(thread)
-                except StopIteration:
-                    break # No more rows
+    def wrapper(row_tuple):
+        return prepare_single_image(row_tuple, config)
 
-            if not active_threads:
-                break # All rows processed and threads finished
-
-            # Clean up finished threads
-            finished_threads = []
-            for thread in active_threads:
-                if not thread.is_alive():
-                    thread.join() # Ensure thread resources are released
-                    finished_threads.append(thread)
-                    pbar.update(1)
-
-            active_threads = [t for t in active_threads if t not in finished_threads]
-
-            # Avoid busy-waiting
-            if len(active_threads) >= config.num_threads or not finished_threads:
-                 threading.Event().wait(0.01) # Small sleep
+    with ThreadPoolExecutor(max_workers=config.num_threads) as executor:
+        [executor.submit(wrapper, row) for row in df.iterrows()]
 
     print("Image processing complete.")
 
