@@ -24,7 +24,8 @@ for img_file in os.listdir(images_path):
         dataset.add_sample(sample)
 
 # Launch FiftyOne App
-session = fo.launch_app(dataset, address="0.0.0.0", port=5151)
+
+session = fo.launch_app(dataset, address="localhost", port=5151)
 session.wait()
 
 time.sleep(100000)
