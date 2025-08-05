@@ -21,7 +21,7 @@ wheels/
 *.egg
 
 # Virtual Environment
-venv/
+venv*/
 env/
 ENV/
 .env
@@ -141,3 +141,6 @@ temp/
 output/
 results/
 *.bak
+
+images*/
+*jsonl

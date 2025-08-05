@@ -21,8 +21,8 @@ src_dir = os.path.dirname(script_dir) # Assuming scripts is one level below src
 sys.path.insert(0, src_dir)
 
 from src.config.data_prep_config import DataPrepConfig
-from src.data_preparation.prepare_vehicle_dataset import prepare_datasets
-from src.utils.config_loader import load_config # Assuming a helper function to load config
+from data_preparation.prepare_usecase_dataset import prepare_datasets
+from src.utils.config_loader import load_config
 
 def main():
     parser = argparse.ArgumentParser(description="Prepare Vehicle Datasets (Images and JSONL)")

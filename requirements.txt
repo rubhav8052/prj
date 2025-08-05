@@ -28,3 +28,4 @@ tqdm>=4.62.0
 aiohttp>=3.8.0
 python-multipart>=0.0.5
 scikit-learn==1.7.0
+mdm-viper-lib==2.6.25

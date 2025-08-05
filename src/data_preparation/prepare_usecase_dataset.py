@@ -65,6 +65,16 @@ def crop_with_context(image: np.ndarray, bbox: List[int], context_percent: float
 
     return cropped_img
 
+def get_image_path_recursively(base_dir, filename, subfolder=None):
+    direct_path = os.path.join(base_dir, filename)
+    if os.path.exists(direct_path):
+        return direct_path
+    if subfolder:
+        sub_path = os.path.join(base_dir, subfolder, filename)
+        if os.path.exists(sub_path):
+            return sub_path
+    return None
+
 def prepare_single_image(row_tuple: Tuple[int, pd.Series], config: DataPrepConfig):
     """Loads, processes (draws bbox, crops with context), and saves a single image."""
     index, row = row_tuple
@@ -80,10 +90,14 @@ def prepare_single_image(row_tuple: Tuple[int, pd.Series], config: DataPrepConfi
         if not img_filename.lower().endswith(('.png', '.jpg', '.jpeg')):
              img_filename += '.png'
 
-        full_img_path = os.path.join(config.image_base_dir, img_filename)
+        full_img_path = get_image_path_recursively(
+            config.image_base_dir,
+            img_filename,
+            subfolder=row[config.attribute_col]
+        )
 
-        if not os.path.exists(full_img_path):
-            print(f"Warning: Image file not found for index {row[config.index_col]}: {full_img_path}. Skipping.")
+        if full_img_path is None:
+            print(f"Warning: Image file not found for index {row[config.index_col]}: {img_filename}. Skipping.")
             return
 
         im = cv2.imread(full_img_path)
@@ -94,16 +108,20 @@ def prepare_single_image(row_tuple: Tuple[int, pd.Series], config: DataPrepConfi
         # Extract bounding box
         box = np.int0([row[config.bbox_cols[0]], row[config.bbox_cols[1]],
                        row[config.bbox_cols[2]], row[config.bbox_cols[3]]])
-
+        
+        if config.get("min_height_width_pixel"):
+            if row[config.bbox_cols[2]] - row[config.bbox_cols[0]] < config.min_height_width_pixel or \
+                row[config.bbox_cols[3]] - row[config.bbox_cols[1]] < config.min_height_width_pixel:
+                print(print(f"Warning:Image too small for index {row[config.index_col]}: {full_img_path}. Skipping."))
+                return
+        
         # Draw rectangle on the original image (optional, for visualization before crop)
-        im_vis = im.copy() # Work on a copy if original is needed elsewhere
-        cv2.rectangle(im_vis, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+        cv2.rectangle(im, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
 
-        # Crop with context using the original image (im)
-        processed_img = crop_with_context(im_vis, box, config.context_percent) # Use im_vis to have bbox in cropped img
+        # Crop with context using the original image
+        processed_img = crop_with_context(im, box, config.context_percent)
 
-        # Save the processed image
-       
+        # Save the processed image       
         os.makedirs(os.path.dirname(output_img_path), exist_ok=True)
         cv2.imwrite(output_img_path, processed_img)
 
@@ -228,27 +246,45 @@ def prepare_datasets(config: DataPrepConfig):
         else:
              print(f"Warning: Column '{config.attribute_col}' has too many unique values for stratification. Splitting without stratification.")
 
+    if config.test_size != 0:
+        test_size = config.test_size
+        val_size = config.val_size / (1-config.test_size)
+        # Split data into train and test
+        train_val_indices, test_indices = train_test_split(
+            indices,
+            test_size=test_size,
+            random_state=config.random_state,
+            stratify=stratify_col
+        )
+    else:
+        train_val_indices = indices
+        val_size = config.val_size
+        test_indices = []
 
+    # Now split train_val into train and val
     train_indices, val_indices = train_test_split(
-        indices,
-        test_size=config.test_size,
+        train_val_indices,
+        test_size=val_size,
         random_state=config.random_state,
-        stratify=stratify_col
+        stratify=stratify_col.loc[df[config.index_col].isin(train_val_indices)] if stratify_col is not None else None
     )
 
-    # Create train/val dataframes using the split indices
+    # Create train/val/test dataframes using the split indices
     X_train = df[df[config.index_col].isin(train_indices)].copy()
-    X_test = df[df[config.index_col].isin(val_indices)].copy()
-
+    X_val = df[df[config.index_col].isin(val_indices)].copy()
+    X_test = df[df[config.index_col].isin(test_indices)].copy()
 
     print(f"Train set size: {len(X_train)}")
-    print(f"Validation set size: {len(X_test)}")
+    print(f"Validation set size: {len(X_val)}")
+    print(f"Test set size: {len(X_test)}")
 
     # --- Create JSONL Datasets ---
     # Use the configured attribute column and filenames
     if config.attribute_col in df.columns:
         create_jsonl_dataset(X_train, config, config.attribute_col, config.attribute_train_file)
-        create_jsonl_dataset(X_test, config, config.attribute_col, config.attribute_val_file)
+        create_jsonl_dataset(X_val, config, config.attribute_col, config.attribute_val_file)
+        if len(X_test) != 0:
+            create_jsonl_dataset(X_test, config, config.attribute_col, config.attribute_test_file)
     else:
         print(f"Skipping attribute dataset creation: column '{config.attribute_col}' not found.")
 

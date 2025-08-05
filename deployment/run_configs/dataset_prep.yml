@@ -11,14 +11,14 @@
 # ============================================================
 
 ENV: "swift"
-EXPERIMENT: "swift_training_data_prep"
+EXPERIMENT: "tl_swift_training_data_prep"
 COMPUTE: "cpupool16core600"
 
-RUN_NAME: "VLM data prep"
+RUN_NAME: "TL Inlay data prep"
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: None
+  CONFIG: src/config/usecase_config/tl_inlay/data_prep_config.py
 
 DEBUG: False
 SRC: "."

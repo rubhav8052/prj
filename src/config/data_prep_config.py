@@ -32,8 +32,10 @@ class DataPrepConfig:
     attribute_prompt_file: Optional[str] = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+f'/attribute_labeling/vehicle/datasets/drawn_green_box_with_context/prompts/occlusion prompt.md' 
     # Percentage of context to add around bounding box
     context_percent: float = 0.5
-    # Test set size for splitting
+    # Test set size for splitting the full dataset
     test_size: float = 0.20
+    # Val set size for splitting the training data
+    val_size: float = 0.20
     # Random state for splitting
     random_state: int = 42
     # Number of threads for image processing
@@ -45,3 +47,4 @@ class DataPrepConfig:
     # Output filenames
     attribute_train_file: str = f"{attribute_col}_train_v1.jsonl"
     attribute_val_file: str = f"{attribute_col}_val_v1.jsonl"
+    attribute_test_file: str = f"{attribute_col}_test_v1.jsonl"
