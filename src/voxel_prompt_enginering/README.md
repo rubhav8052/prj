@@ -1,6 +1,6 @@
 ## Setup and Installation
 
-1. Install requirements: `pip install -r requirements.txt`
+1. Install requirements: `pip install -r src/voxel_prompt_engineering/requirements.txt`
 2. Configure image path in voxel.py script to the path containing your images
 
 
