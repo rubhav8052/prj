@@ -8,7 +8,7 @@ Move to the src/voxel_prompt_engineering directory and run the following command
 
 
 A custom fiftyone plugins directory is specified for voxel to recognize our plugin:
-- Run the following command: `export FIFTYONE_PLUGINS_DIR={PATH_TO voxel_prompt_engineering_dir}`
+Run the following command: `export FIFTYONE_PLUGINS_DIR={PATH_TO voxel_prompt_engineering_dir}`
 
 
 We use a FastAPI application which provides an endpoint for running inference on images using the Qwen2-VL-2B-Instruct and Deepseek-vl2-tiny model with vLLM. The API accepts a base64-encoded image along with a text prompt and returns the generated response.
@@ -19,7 +19,7 @@ Start the inference server by running the following command in the **voxel_promp
 
 - Run server: `python3 vllm_inference_server.py --model qwen/deepseek`
 
-- Run voxel_visualization: 'python3 voxel.py'
+- Run voxel_visualization: `python3 voxel.py`
 
 
 ## Plugin Usage
@@ -46,3 +46,8 @@ After starting the voxel session, it will be available on http://localhost:5151
 You can use the plugin with multiple samples at the same time. In the first step, select as many samples as you would like to use.
 
 You can swap between deepseek and qwen by using the run time argument --model when running the vllm_inference_server.py script
+
+Note:
+- This plugin's usage was tested on Nvidia Tesla T4 with 16GB GPU memory. If you are running it locally on GPUs having lower GPU memory, the models may not be load or the inference may be slow.
+- You can try lowering the `max_model_len` in the vllm_inference_server.py script to reduce the memory requirements.(This lowers the max token size that can be fed into the model so larger frames may exceed the reduced token count and inference may fail).
+- You can also run this plugin using an Azure compute instance. You will need to modify `session = fo.launch_app(dataset, address="localhost", port=5151)` to `session = fo.launch_app(dataset, address="0.0.0.0", port=5151)` in voxel.py script.
