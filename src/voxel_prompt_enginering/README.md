@@ -48,6 +48,7 @@ You can use the plugin with multiple samples at the same time. In the first step
 You can swap between deepseek and qwen by using the run time argument --model when running the vllm_inference_server.py script
 
 Note:
-- This plugin's usage was tested on Nvidia Tesla T4 with 16GB GPU memory. If you are running it locally on GPUs having lower GPU memory, the models may not be load or the inference may be slow.
+
+- This plugin's usage was tested on Nvidia Tesla T4 with 16GB GPU memory. If you are running it locally on GPUs having lower GPU memory, the models may not load or the inference may be slow.
 - You can try lowering the `max_model_len` in the vllm_inference_server.py script to reduce the memory requirements.(This lowers the max token size that can be fed into the model so larger frames may exceed the reduced token count and inference may fail).
 - You can also run this plugin using an Azure compute instance. You will need to modify `session = fo.launch_app(dataset, address="localhost", port=5151)` to `session = fo.launch_app(dataset, address="0.0.0.0", port=5151)` in voxel.py script.
