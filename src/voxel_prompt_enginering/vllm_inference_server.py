@@ -6,7 +6,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from PIL import Image
 from vllm import LLM, SamplingParams
-from transformers import AutoProcessor
 import uvicorn
 
 # -----------------------------
@@ -42,12 +41,17 @@ async def load_model():
 
     if model_type == "qwen":
         MODEL_NAME = "Qwen/Qwen2-VL-2B-Instruct"
-        processor = AutoProcessor.from_pretrained(MODEL_NAME)
+        max_model_len = 4096 # qwen-2vl has a maximum permissible length of 32768
         llm = LLM(
             model=MODEL_NAME,
-            max_model_len=4096,
+            max_model_len=max_model_len,
             max_num_seqs=1,
-            limit_mm_per_prompt={"image": 1},
+            limit_mm_per_prompt={"image": 1, "video": 0},
+            # The following lines ensure that the input image is rescaled if it is very large such that the input token count does not exceed the set max_model_len of the model
+            mm_processor_kwargs={
+            "min_pixels": 28 * 28,
+            "max_pixels": (max_model_len -100) * 28 * 28,  # reserving 100 tokens for output text tokens to prevent clipping of response in case of large input images
+            },
             enforce_eager=True,
             dtype="float16"
         )
@@ -57,7 +61,7 @@ async def load_model():
         processor = None
         llm = LLM(
             model=MODEL_NAME,
-            max_model_len=4096,
+            max_model_len=4096, #deepseek has a maximum permissible length of 4096
             max_num_seqs=1,
             hf_overrides={"architectures": ["DeepseekVLV2ForCausalLM"]},
             dtype="float16",
@@ -75,12 +79,13 @@ class InferenceRequest(BaseModel):
 # Inference functions
 # -----------------------------
 def run_qwen(image_bytes, prompt):
-    image = Image.open(io.BytesIO(image_bytes))
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": prompt}]},
-    ]
-    formatted_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    placeholder = "<|image_pad|>"
+    formatted_prompt = (
+    "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
+    f"<|im_start|>user\n<|vision_start|>{placeholder}<|vision_end|>{prompt}<|im_end|>\n"
+    "<|im_start|>assistant\n"
+    )
     sampling_params = SamplingParams(temperature=0.7, top_p=0.8, repetition_penalty=1.05, max_tokens=300)
     outputs = llm.generate(
         [{"prompt": formatted_prompt, "multi_modal_data": {"image": [image]}}],
