@@ -29,3 +29,5 @@ aiohttp>=3.8.0
 python-multipart>=0.0.5
 scikit-learn==1.7.0
 mdm-viper-lib==2.6.25
+ms-swift==3.6.1
+fiftyone==1.4.0

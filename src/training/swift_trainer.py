@@ -13,12 +13,28 @@
 from dataclasses import asdict
 import os
 import sys
+from azureml.core import Run
+from transformers import TrainerCallback
+import swift.plugin
 from swift.llm import sft_main, TrainArguments
 from swift.utils import get_logger
 
 from src.config.training_config import TrainingConfig
 from src.utils.aml_utils import register_aml_model
 logger = get_logger()
+
+class AMLLogger(TrainerCallback):
+    def __init__(self):
+        super().__init__()
+        self.run = Run.get_context()
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            for name, val in logs.items():
+                if isinstance(val, (int, float)):
+                    self.run.log(name, val)
+
+swift.plugin.extra_callbacks.append(AMLLogger())                   
 
 def run_swift_sft(config: TrainingConfig):
     """Runs Swift SFT (Supervised Fine-Tuning) based on the configuration."""
@@ -68,7 +84,7 @@ def run_swift_sft(config: TrainingConfig):
         "save_steps": config.save_steps if config.save_strategy == 'steps' else None, # Only set save_steps if strategy is 'steps'
         "save_total_limit": 3, # Keep last 3 checkpoints
         "logging_steps": 50, # Log every 50 steps (adjust as needed)
-        "eval_steps": 500, # Evaluate every 500 steps (adjust as needed)
+        "eval_steps": 50, # Evaluate every 50 steps (adjust as needed)
         "lora_rank": config.lora_rank if config.train_type == 'lora' else 8, # Default LoRA rank if not specified
         "lora_alpha": config.lora_rank * 2 if config.train_type == 'lora' else 16, # Common practice alpha = 2*rank
         "gradient_checkpointing": True, # Enable gradient checkpointing to save memory
@@ -76,7 +92,7 @@ def run_swift_sft(config: TrainingConfig):
         "fp16": config.torch_dtype == 'float16',
         "bf16": config.torch_dtype == 'bfloat16',
         "deepspeed": config.deepspeed,
-        "report_to": ["tensorboard"], # Report metrics to TensorBoard
+        "report_to": ["tensorboard", "azure_ml"], # Report metrics to TensorBoard and Azure ML
         "dataloader_num_workers": 1, # Adjust based on system capabilities
         "eval_strategy": "steps" if config.val_dataset_paths else "no", # Evaluate if val data provided
         "load_best_model_at_end": True if config.val_dataset_paths else False, # Load best model if evaluating

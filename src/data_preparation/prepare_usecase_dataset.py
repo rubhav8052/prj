@@ -109,7 +109,7 @@ def prepare_single_image(row_tuple: Tuple[int, pd.Series], config: DataPrepConfi
         box = np.int0([row[config.bbox_cols[0]], row[config.bbox_cols[1]],
                        row[config.bbox_cols[2]], row[config.bbox_cols[3]]])
         
-        if config.get("min_height_width_pixel"):
+        if config.min_height_width_pixel:
             if row[config.bbox_cols[2]] - row[config.bbox_cols[0]] < config.min_height_width_pixel or \
                 row[config.bbox_cols[3]] - row[config.bbox_cols[1]] < config.min_height_width_pixel:
                 print(print(f"Warning:Image too small for index {row[config.index_col]}: {full_img_path}. Skipping."))

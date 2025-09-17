@@ -12,13 +12,13 @@
 
 ENV: "swift"
 EXPERIMENT: "swift_inference"
-COMPUTE: "gpupool1A100"
+COMPUTE: "gpupoolh100"
 
-RUN_NAME: "deepseek_vehicle_type_inference" #None
+RUN_NAME: "deepseek_tl_inlay_inference" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/inference_configs/deepseek-vehicle_type.py
+  CONFIG: src/config/usecase_config/tl_inlay/inferance_deepseek_config.py
 
 DEBUG: TRUE
 SRC: "."

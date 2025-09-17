@@ -18,7 +18,8 @@ from typing import Optional, Dict, List
 class ExportConfig:
     """Configuration for Swift model quantization."""
     # Model identifier (Hugging Face or ModelScope)
-    model: str = "deepseek-ai/deepseek-vl2-tiny" # Example: "Qwen/Qwen2-VL-7B-Instruct"
+    model: str = "deepseek-ai/deepseek-vl2-tiny"
+    # model: str = "Qwen/Qwen2-VL-2B-Instruct"
 
     lora_paths: Optional[List[str]] = field(default_factory=lambda:[os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']+"/attribute_labeling/vehicle/occlusion/deepseek/frozen_vit_frozen_llm_90/v11-20250408-181301/checkpoint-9324"])
     

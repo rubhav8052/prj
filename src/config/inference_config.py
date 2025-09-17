@@ -14,28 +14,28 @@ import os
 
 # Common configurations
 BASE_PATH = os.environ["AZUREML_DATAREFERENCE_VDEEPINGESTPROD"]
-IMAGE_FOLDER = BASE_PATH + "/object_retrieval/AL_Data/Vehicle_3885"
+BASE_WORKSPACE_PATH = os.environ['AZUREML_DATAREFERENCE_workspaceblobstore']
+IMAGE_FOLDER = BASE_PATH + '/attribute_labeling/tl_inlays2/test_images/'
 
 # Model specific configurations
 DEEPSEEK_CONFIG = {
-    "model_name": "deepseek-ai/deepseek-vl2-tiny",
+    "model_name": BASE_WORKSPACE_PATH+"/attribute_labeling/traffic_lights_inlay/deepseek/exported/v0-20250904-121302/",
     "max_model_len": 4096,
     "max_num_seqs": 32,
     "batch_size": 5,
-    "output_file": "outputs/results_batch_deepseek.json",
-    "prompt_module": "src.prompts.vehicle_prompt",
-    "prompt_variable": "vehicle_prompt"
+    "output_file": BASE_WORKSPACE_PATH + "/attribute_labeling/traffic_lights_inlay/deepseek/inference_outputs/v0-20250904-121302/frozen_vit_frozen_llm_90_output.json",
+    "prompt_module": "src.prompts.tl_inlay_prompt",
+    "prompt_variable": "tl_inlay_prompt"
 }
 
 QWEN_CONFIG = {
-    "model_name": "Qwen/Qwen2-VL-2B-Instruct",
-    "model_path": BASE_PATH + "/object_retrieval/Qwen-2B weights/qwen2_vl_lora_sft_4_epochs_3885_128",
+    "model_name": BASE_WORKSPACE_PATH+"/attribute_labeling/traffic_lights_inlay/qwen/exported/v0-20250904-121124/",
     "max_model_len": 4096,
     "max_num_seqs": 5,
     "batch_size": 16,
-    "output_file": "outputs/results_batch_qwen.json",
-    "prompt_module": "src.prompts.vehicle_prompt",
-    "prompt_variable": "vehicle_prompt"
+    "output_file": BASE_WORKSPACE_PATH + "/attribute_labeling/traffic_lights_inlay/qwen/inference_outputs/v0-20250904-121124/frozen_vit_frozen_llm_90_output.json",
+    "prompt_module": "src.prompts.tl_inlay_prompt",
+    "prompt_variable": "tl_inlay_prompt"
 }
 
 # Common sampling parameters

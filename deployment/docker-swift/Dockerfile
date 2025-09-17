@@ -41,7 +41,7 @@ RUN pip install azure-storage-blob
 RUN pip install onnx==1.17.0 onnxruntime-gpu==1.17 onnxsim==0.4.35
 RUN pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 RUN pip install auto_gptq optimum -U
-RUN pip install ms-swift deepspeed flash-attn pandas scikit-learn seaborn vllm==0.7.1 timm
+RUN pip install ms-swift deepspeed flash-attn==2.7.4.post1 pandas scikit-learn seaborn vllm==0.7.1 timm
 
 RUN pip install qwen-vl-utils==0.0.10 transformers==4.48.2 -t qwen_libs/
 RUN pip install transformers==4.41.0 peft==0.11.0 -t deepseek_libs/

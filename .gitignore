@@ -21,7 +21,7 @@ wheels/
 *.egg
 
 # Virtual Environment
-venv*/
+*venv*/
 env/
 ENV/
 .env
@@ -143,4 +143,7 @@ results/
 *.bak
 
 images*/
-*jsonl
+test_images*/
+*.json
+*.jsonl
+confusion_matrix.png

@@ -11,14 +11,14 @@
 # ============================================================
 
 ENV: "swift"
-EXPERIMENT: "swift_inference"
-COMPUTE: "gpupool1A100"
+EXPERIMENT: "swift_export"
+COMPUTE: "gpupoolh100"
 
-RUN_NAME: "deepseek_export" #None
+RUN_NAME: "tl_inlay_qwen_export"
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: None
+  CONFIG: src/config/usecase_config/tl_inlay/export_config.py
 
 DEBUG: TRUE
 SRC: "."

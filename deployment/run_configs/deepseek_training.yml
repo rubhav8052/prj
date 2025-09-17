@@ -12,13 +12,13 @@
 
 ENV: "swift"
 EXPERIMENT: "swift_training"
-COMPUTE: "gpupool1A100"
+COMPUTE: "gpupoolh100"
 
-RUN_NAME: "deepseek_vehicle_type_training" #None
+RUN_NAME: "deepseek_tl_inlay_training"
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/training_configs/deepseek-vehicle_type.py
+  CONFIG: src/config/usecase_config/tl_inlay/training_deepseek_config.py
 
 DEBUG: TRUE
 SRC: "."

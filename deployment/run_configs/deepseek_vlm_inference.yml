@@ -10,16 +10,16 @@
 #  of a patent, utility model or design.
 # ============================================================
 
-ENV: "swift"
-EXPERIMENT: "swift_training"
-COMPUTE: "gpupoolv100"
+ENV: "vllm_inf"
+EXPERIMENT: "vlm_inference"
+COMPUTE: "gpupoolh100"
 
-RUN_NAME: "qwen2b_tl_inlay_training" #None
+RUN_NAME: "deepseek_tl_inlay_vlm_inference" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: src/config/usecase_config/tl_inlay/training_qwen_config.py
+  model: "deepseek"
 
 DEBUG: TRUE
 SRC: "."
-ENTRY_SCRIPT: "src/scripts/run_training.py"
+ENTRY_SCRIPT: "src/scripts/run_inference.py"

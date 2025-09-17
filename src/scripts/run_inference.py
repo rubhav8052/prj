@@ -73,7 +73,7 @@ def main():
 
         print("\n=== Running Deepseek Inference ===")
         config = DEEPSEEK_CONFIG.copy()
-        config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
+        config["output_file"] = config.get("output_file") or os.path.join(args.output_dir, os.path.basename(config["output_file"]))
 
         # Override prompt if specified in arguments
         if args.prompt_module and args.prompt_variable:
@@ -96,7 +96,7 @@ def main():
 
         print("\n=== Running Qwen Inference ===")
         config = QWEN_CONFIG.copy()
-        config["output_file"] = os.path.join(args.output_dir, os.path.basename(config["output_file"]))
+        config["output_file"] = config.get("output_file") or os.path.join(args.output_dir, os.path.basename(config["output_file"]))
 
         # Override prompt if specified in arguments
         if args.prompt_module and args.prompt_variable:

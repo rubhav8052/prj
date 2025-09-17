@@ -1,16 +1,3 @@
-__copyright__ = """
-===================================================================================
- C O P Y R I G H T
------------------------------------------------------------------------------------
- Copyright (c) 2023-2024 Robert Bosch GmbH and Cariad SE. All rights reserved.
-===================================================================================
-"""
-
-""" 
-Provided a csv file with the columns index, frame_sha, coordinates x0,y0,x1,y1 and class - the script
-downloads the images from mdm and uploads to Azure container "vdeepingestprod" and container "datasets".
-"""
-
 import logging
 import os
 import time
@@ -53,7 +40,7 @@ mdd_client = MetaDataDumpClient(credential=credential, base_url=mdd_url,credenti
 
 STORAGE_ACCOUNT_NAME = "vdeepingestprod"
 CONTAINER_NAME = "datasets"
-FOLDER_IN_BLOB = "attribute_labeling/tl_inlays/"
+FOLDER_IN_BLOB = "attribute_labeling/tl_inlays2/"
 account_url = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 cred = DefaultAzureCredential(exclude_environment_credential=True)
 blob_service_client = BlobServiceClient(account_url=account_url, credential=cred)

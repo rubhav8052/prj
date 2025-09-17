@@ -40,9 +40,9 @@ class TrainingConfig:
     # Attention implementation (e.g., 'flash_attn', 'sdpa', None)
     attn_impl: Optional[str] = None # Example: 'flash_attn' for Qwen
     # Strategy for saving checkpoints ('epoch', 'steps')
-    save_strategy: str = "epoch"
+    save_strategy: str = "steps"
     # Number of steps between saves if save_strategy is 'steps'
-    save_steps: Optional[int] = None
+    save_steps: Optional[int] = 500
     # Batch size per device for training
     batch_size: int = 1 # Default from original scripts, adjust as needed
     # Gradient accumulation steps
