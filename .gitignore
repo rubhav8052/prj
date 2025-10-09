@@ -143,7 +143,9 @@ results/
 *.bak
 
 images*/
+*jsonl
+*json
 test_images*/
-*.json
-*.jsonl
+*venv/
+src/voxel_prompt*/
 confusion_matrix.png
