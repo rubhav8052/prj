@@ -1,0 +1,8 @@
+mutti_object_table: tl_ac_objects_v0
+mutti_frame_table: tl_ac_frames_v0
+mutti_sequence_table: tl_ac_sequences_v0
+label_column: FC1_predicted_inlay
+streams: ["FC1"]
+label_request_ids: "" #This should be kept empty. Field to be passed as an input from cli.
+usecase: tl_inlay
+limit_rows: 1000

@@ -1,0 +1,14 @@
+mutti_object_table: dyo_ac_objects_v0
+mutti_frame_table: dyo_ac_frames_v0
+mutti_sequence_table: dyo_ac_sequences_v0
+label_column: fused_vehicle_type
+streams: [
+  "FC1", 
+  "TV_front", 
+  "TV_left",
+  "TV_rear",
+  "TV_right"
+]
+label_request_ids: "" #This should be kept empty. Field to be passed as an input from cli.
+usecase: dyo_vehicle_type
+limit_rows: 1000
