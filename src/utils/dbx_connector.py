@@ -85,7 +85,18 @@ class DBXConnector:
                 select
                     o.{cfg.label_column},
                     {url_cols_sql},
-                    {bbox_cols_sql}
+                    {bbox_cols_sql},
+                    case
+                        when cardinality(s.involved_models) > 0 then
+                            element_at(
+                            split(
+                                element_at(s.involved_models, -1),
+                                '/'
+                            ),
+                            -1
+                            )
+                        else null
+                    end as last_involved_model                    
                 from 
                     bronze.per_gtop_automated_labels.{cfg.mutti_object_table} o
                 join 
@@ -94,6 +105,10 @@ class DBXConnector:
                         o.label_request_id = f.label_request_id
                     and
                         o.frame_master_index = f.frame_master_index
+                join
+                    bronze.per_gtop_automated_labels.{cfg.mutti_sequence_table} s
+                    on
+                        f.sequence_label_request_id = f.sequence_label_request_id                        
                 where 
                     cast(o.processed_at as date) = '{date.isoformat()}'
                 limit {getattr(cfg, "limit_rows", 100)};
