@@ -3,12 +3,12 @@
 Move to the src/voxel_prompt_engineering directory and run the following commands:
 
 1. Install requirements: `pip install -r requirements.txt`
-2. Configure image path in voxel.py script to the path containing your images
 
+You would need to save your test/sample images that you would like to run the LLM on in a directory and its path would be passed as a runtime argument to the voxel script below.
 
 
 A custom fiftyone plugins directory is specified for voxel to recognize our plugin:
-Run the following command: `export FIFTYONE_PLUGINS_DIR={PATH_TO voxel_prompt_engineering_dir}`
+- Run the following command: `export FIFTYONE_PLUGINS_DIR={PATH_TO voxel_prompt_engineering_dir}`
 
 
 We use a FastAPI application which provides an endpoint for running inference on images using the Qwen2-VL-2B-Instruct and Deepseek-vl2-tiny model with vLLM. The API accepts a base64-encoded image along with a text prompt and returns the generated response.
@@ -19,7 +19,7 @@ Start the inference server by running the following command in the **voxel_promp
 
 - Run server: `python3 vllm_inference_server.py --model qwen/deepseek`
 
-- Run voxel_visualization: `python3 voxel.py`
+- Run voxel_visualization: `python3 voxel.py` --images {PATH_TO_IMAGE_DIR}
 
 
 ## Plugin Usage

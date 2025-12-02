@@ -147,5 +147,4 @@ images*/
 *json
 test_images*/
 *venv/
-src/voxel_prompt*/
 confusion_matrix.png
