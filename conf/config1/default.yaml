@@ -1,0 +1,213 @@
+
+# ============================================================
+#  DATA PREPARATION 
+# ============================================================
+data_prep:
+
+  input_csv_paths:
+  - ${oc.env:AZUREML_DATAREFERENCE_image_dir}
+
+  image_base_dir: ${oc.env:AZUREML_DATAREFERENCE_image_dir}
+
+  output_dir: ${oc.env:AZURE_ML_OUTPUT_prep_output}
+
+  index_col: index
+  img_sha_col: img_sha
+  attribute_col: occlusion
+  bbox_cols: [x0, y0, x1, y1]
+
+
+  attribute_prompt_file: src/prompts/default_prompt.py
+
+  context_percent: 0.5
+  min_height_width_pixel: 5
+  num_threads: 32
+
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+
+  attribute_train_file: train_v1.jsonl
+  attribute_val_file: val_v1.jsonl
+  attribute_test_file: test_v1.jsonl
+
+# ============================================================
+# TRAINING CONFIGURATION
+# ============================================================
+training:
+  # Model Configuration
+  model_id: "deepseek-ai/deepseek-vl2-tiny" #"Qwen/Qwen2-VL-7B-Instruct" # Example: "Qwen/Qwen2-VL-7B-Instruct", "deepseek-ai/deepseek-vl2-tiny"
+
+  # Dataset Paths (JSONL format)
+  # train_dataset_paths:
+  # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/temp/vehicle/datasets/drawn_green_box_with_context/occlusion_train_v1.jsonl"
+
+  # val_dataset_paths:
+  # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/temp/vehicle/datasets/drawn_green_box_with_context/occlusion_val_v1.jsonl"
+
+  # # Output Configuration
+  # output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/temp/vehicle/occlusion/deepseek/frozen_vit_frozen_llm_90_response_integer/"
+
+  train_dataset_paths:
+  - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}
+  # train_dataset_paths: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_train_v1.jsonl"
+
+  # val_dataset_paths:
+  # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_val_v1.jsonl"
+  val_dataset_paths:
+  - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}
+
+  # output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/deepseek/frozen_vit_frozen_llm_90_response_integer/"
+  # output_dir: /tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/
+  output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}
+
+
+  # Training Configuration
+  train_type: "lora" # Options: 'lora', 'full'
+  lora_rank: 256
+
+  # Model Freezing Configuration
+  freeze_vit: true
+  freeze_parameters_ratio: 0.9 # Set to null to train all unfrozen LLM params
+
+  # Training Hyperparameters
+  num_train_epochs: 3
+  torch_dtype: "bfloat16" # Options: 'bfloat16', 'float16', 'float32'
+  attn_impl: null # Example: 'flash_attn' for Qwen
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 1.0e-4
+  max_length: 2048
+
+  # Checkpoint Configuration
+  save_strategy: "steps" # Options: 'epoch', 'steps'
+  save_steps: 500 # Number of steps between saves (only used if save_strategy is 'steps')
+
+  # Distributed Training
+  deepspeed: null # Example: 'default_zero2' or path to config
+
+  # Loss Configuration
+  loss_type: "focal_loss"
+  # ///////////////////////////////////////////////////////////////////////////////////////
+  # Swift Libraries Path
+  # swift_libs_path: null # Use "/qwen_libs" for Qwen models
+  # swift_libs_path: "/deepseek_libs" # Use "/qwen_libs" for Qwen models
+  swift_libs_path: null # Use "/qwen_libs" for Qwen models
+  # //////////////////////////////////////////////////////////////////////////////////
+  # Environment Variables
+  env_vars:
+    # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/modelscope"
+    # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_azureml_container}/attribute_labeling/modelscope"
+    MODELSCOPE_CACHE: "${training.output_dir}/attribute_labeling/modelscope"
+    OMP_NUM_THREADS: "14"
+    CUDA_VISIBLE_DEVICES: "0"
+
+  # Additional Swift Arguments (optional)
+  extra_swift_args: {}
+
+  # ============================================================
+  # EXPORT CONFIGURATION (Model quantization + LoRA merge)
+  # ============================================================
+
+  export:
+    # Model to export
+    model: "deepseek-ai/deepseek-vl2-tiny"
+    # model: "Qwen/Qwen2-VL-2B-Instruct"
+
+    # LoRA checkpoint to merge
+    lora_paths:
+    - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/vehicle/occlusion/deepseek/frozen_vit_frozen_llm_90/v11-20250408-181301/checkpoint-9324"
+    # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/vehicle/occlusion/deepseek/frozen_vit_frozen_llm_90/v11-20250408-181301/checkpoint-9324"
+
+    # Dataset for quantization calibration
+    dataset_path: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/temp/vehicle/datasets/drawn_green_box_with_context/occlusion_train_v1.jsonl"
+
+    # Output directory for exported model
+    output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/vehicle/occlusion/exported/deepseek/"
+
+    # Quantization settings (optional, commented in original)
+    # quant_bits: 4
+    # quant_method: "gptq"
+    # quant_batch_size: 1
+    # quant_n_samples: 256
+
+    # Merge LoRA weights into model
+    merge_lora: true
+
+    # Which library path to use
+    swift_libs_path: null # or "/qwen_libs" for Qwen
+    # swift_libs_path: "/deepseek_libs" # or "/qwen_libs" for Qwen
+
+# ============================================================
+# INFERENCE CONFIG
+# ============================================================
+
+inference:
+  # model: all
+  # ----------------------------
+  # Azure / filesystem paths
+  # ----------------------------
+  paths:
+    # model_base_path: ${oc.env:AZUREML_DATAREFERENCE_input_data}
+    # data_prep_path: ${oc.env:AZUREML_DATAREFERENCE_processed_images}
+    # output_path: ${oc.env:AZURE_ML_OUTPUT_inference_results}
+
+    # base_workspace_path: ${oc.env:AZUREML_DATAREFERENCE_input_data}
+    # base_path: ${inference.paths.base_workspace_path}
+    # image_folder: ${inference.paths.base_path}/job_outputs/data_prep/
+
+    image_folder: ${oc.env:AZUREML_DATAREFERENCE_processed_images}
+    exported_model_root: ${oc.env:AZUREML_DATAREFERENCE_input_data}
+    inference_output_dir: ${oc.env:AZURE_ML_OUTPUT_inference_results}
+
+
+    # base_path: ${oc.env:AZUREML_DATAREFERENCE_azureml_container,/tmp/azureml_data_mount}
+    # image_folder: ${inference.paths.base_workspace_path}/raw_output/tl_inlay/images
+
+  # ----------------------------
+  # Model configs
+  # ----------------------------
+  DEEPSEEK_CONFIG:
+    model_name: null
+    # model_name: ${config1.inference.paths.model_base_path}/job_outputs/models/exported/${config1.model}/
+    # model_name: ${inference.paths.base_workspace_path}/raw_output/deepseek/exported/v4-20260201-202214/checkpoint-159/
+    max_model_len: 4096
+    max_num_seqs: 32
+    batch_size: 5
+    output_file: null
+    # output_file: ${config1.inference.paths.model_base_path}/job_outputs/inference_outputs/${config1.model}/
+    # output_file: ${inference.paths.base_workspace_path}/raw_output/deepseek/inference_outputs/v4-20260201-202214/frozen_vit_frozen_llm_90_output.json
+    prompt_module: src.prompts.tl_inlay_prompt
+    prompt_variable: tl_inlay_prompt
+
+  QWEN_CONFIG:
+    # model_name: ${inference.paths.base_workspace_path}/attribute_labeling/traffic_lights_inlay/qwen/exported/v0-20250904-121124/
+    model_name: null
+    max_model_len: 4096
+    max_num_seqs: 5
+    batch_size: 16
+    # output_file: ${inference.paths.base_workspace_path}/attribute_labeling/traffic_lights_inlay/qwen/inference_outputs/v0-20250904-121124/frozen_vit_frozen_llm_90_output.json
+    output_file: null
+    prompt_module: src.prompts.tl_inlay_prompt
+    prompt_variable: tl_inlay_prompt
+
+  # ----------------------------
+  # Sampling params
+  # ----------------------------
+  SAMPLING_PARAMS:
+    temperature: 0.7
+    top_p: 0.8
+    repetition_penalty: 1.05
+    max_tokens: 5000
+
+# ============================================================
+# PIPELINE CONTROL
+# ============================================================
+
+model: deepseek
+
+pipeline:
+  stages:
+    data_preparation: true
+    training: false
+    inference: false

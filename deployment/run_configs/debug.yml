@@ -10,16 +10,50 @@
 #  of a patent, utility model or design.
 # ============================================================
 
-ENV: "swift"
-EXPERIMENT: "swift_inference"
-COMPUTE: "gpupoolv100"
+# ENV: "swift"
+# EXPERIMENT: "swift_inference"
+# COMPUTE: "gpupoolv100"
+
+# RUN_NAME: "debug" #None
+# NODES: 1
+
+# SCRIPT_ARGUMENTS:
+#   CONFIG: None
+
+# DEBUG: TRUE
+# SRC: "."
+# ENTRY_SCRIPT: "src/utils/debug.py"
+
+
+# ENV: "envswifthydra:27"
+ENV: "envswifthydra:28"
+# ENV: "vllm_inf:2"
+EXPERIMENT: "vlm_inference"
+COMPUTE: "compute-cls-2"x 
 
 RUN_NAME: "debug" #None
 NODES: 1
 
 SCRIPT_ARGUMENTS:
-  CONFIG: None
+# model: deepseek
+# --config-name: config3/tl_inlay/tl_inlay
 
 DEBUG: TRUE
 SRC: "."
 ENTRY_SCRIPT: "src/utils/debug.py"
+
+
+
+# ENV: "swift"
+# EXPERIMENT: "swift_inference"
+# COMPUTE: "gpupoolv100"
+
+# RUN_NAME: "debug" #None
+# NODES: 1
+
+# SCRIPT_ARGUMENTS:
+#   CONFIG: None
+
+# DEBUG: TRUE
+# SRC: "."
+# ENTRY_SCRIPT: "src/utils/debug.py"

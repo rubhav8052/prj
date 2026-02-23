@@ -1,0 +1,165 @@
+defaults:
+- default
+# - _self_
+
+# DATA PREPARATION - TL INLAY SPECIFIC
+
+data_prep:
+  image_base_dir: ${oc.env:AZUREML_DATAREFERENCE_image_dir}/tl_inlays2/
+  input_csv_paths:
+  - ${oc.env:AZUREML_DATAREFERENCE_image_dir}/tl_inlays2/full_dataset_2.csv
+  index_col: frame_id
+  img_sha_col: frame_sha
+  attribute_col: inlay
+  attribute_prompt_file: src/prompts/tl_inlay_prompt.py
+  min_height_width_pixel: 5
+  test_size: 0.10
+
+  attribute_train_file: tl_inlay_train_v1.jsonl
+  attribute_val_file: tl_inlay_val_v1.jsonl
+  attribute_test_file: tl_inlay_test_v1.jsonl
+  output_dir: ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/data_prep
+
+
+model: config3
+
+# TRAINING CONFIGURATION - TL INLAY SPECIFIC
+training:
+  model_id: "deepseek-ai/deepseek-vl2-tiny"
+  # swift_libs_path: "/deepseek_libs"
+  swift_libs_path: null
+
+  # train_dataset_paths:
+  # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_train_v1.jsonl"
+  # train_dataset_paths: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_train_v1.jsonl"
+  train_dataset_paths:
+  # - ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/tl_inlay_train_v1.jsonl
+  - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}/tl_inlay/data_prep/tl_inlay_train_v1.jsonl
+
+  # val_dataset_paths:
+  # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_val_v1.jsonl"
+  # val_dataset_paths: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_val_v1.jsonl"
+  val_dataset_paths:
+  # - ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/tl_inlay_val_v1.jsonl
+  - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}/tl_inlay/data_prep/tl_inlay_val_v1.jsonl
+
+  # output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/deepseek/frozen_vit_frozen_llm_90_response_integer/"
+  # output_dir: /tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/
+  output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/training/${config1.model}
+  env_vars:
+    # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/modelscope"
+    # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_azureml_container}/attribute_labeling/modelscope"
+    MODELSCOPE_CACHE: "${config1.training.output_dir}/attribute_labeling/modelscope"
+    OMP_NUM_THREADS: "14"
+    CUDA_VISIBLE_DEVICES: "0"
+  export:
+    # raw_output/deepseek/llm_response_integer/v4-20260201-202214/checkpoint-159/
+
+    lora_paths: null
+    # lora_paths:
+    # - "/tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/v4-20260201-202214/checkpoint-159/"
+    # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/qwen/frozen_vit_frozen_llm_90_response_integer/v0-20250904-121124/checkpoint-630"
+    # dataset_path: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_train_v1.jsonl"
+    dataset_path: ${config1.training.train_dataset_paths[0]}
+
+
+    # dataset_path: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_train_v1.jsonl"
+    # output_dir: "/tmp/azureml_data_mount/raw_output/deepseek/exported/v4-20260201-202214/checkpoint-159/"
+    # output_dir: "/tmp/azureml_data_mount/raw_output/deepseek/exported/"
+    output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/exported/${config1.model}
+
+
+inference:
+  # model: all
+  # ----------------------------
+  # Azure / filesystem paths
+  # ----------------------------
+  paths:
+
+    image_folder: ${oc.env:AZUREML_DATAREFERENCE_processed_images}/tl_inlay/data_prep/images
+    exported_model_root: ${oc.env:AZUREML_DATAREFERENCE_input_data}/tl_inlay/exported/${config1.model}
+    inference_output_dir: ${oc.env:AZURE_ML_OUTPUT_inference_results}/tl_inlay/inference_results/${config1.model}
+
+
+
+# defaults:
+# - default
+# # - _self_
+
+# # DATA PREPARATION - TL INLAY SPECIFIC
+
+# data_prep:
+#   output_dir: ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay
+#   image_base_dir: ${oc.env:AZUREML_DATAREFERENCE_image_dir}/tl_inlays2/
+#   input_csv_paths:
+#   - ${oc.env:AZUREML_DATAREFERENCE_image_dir}/tl_inlays2/full_dataset_2.csv
+#   index_col: frame_id
+#   img_sha_col: frame_sha
+#   attribute_col: inlay
+#   attribute_prompt_file: src/prompts/tl_inlay_prompt.py
+#   min_height_width_pixel: 5
+#   test_size: 0.10
+
+#   attribute_train_file: tl_inlay_train_v1.jsonl
+#   attribute_val_file: tl_inlay_val_v1.jsonl
+#   attribute_test_file: tl_inlay_test_v1.jsonl
+
+
+
+
+# # TRAINING CONFIGURATION - TL INLAY SPECIFIC
+# training:
+#   model_id: "deepseek-ai/deepseek-vl2-tiny"
+#   # swift_libs_path: "/deepseek_libs"
+#   swift_libs_path: null
+
+#   # train_dataset_paths:
+#   # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_train_v1.jsonl"
+#   # train_dataset_paths: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_train_v1.jsonl"
+#   train_dataset_paths:
+#   - ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/tl_inlay_train_v1.jsonl
+#   # - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}/tl_inlay/tl_inlay_train_v1.jsonl
+
+#   # val_dataset_paths:
+#   # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_val_v1.jsonl"
+#   # val_dataset_paths: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_val_v1.jsonl"
+#   val_dataset_paths:
+#   - ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/tl_inlay_val_v1.jsonl
+#   # - ${oc.env:AZUREML_DATAREFERENCE_data_prep_dir}/tl_inlay/tl_inlay_val_v1.jsonl
+
+#   # output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/deepseek/frozen_vit_frozen_llm_90_response_integer/"
+#   # output_dir: /tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/
+#   output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/training/${config1.model}
+#   env_vars:
+#     # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/modelscope"
+#     # MODELSCOPE_CACHE: "${AZUREML_DATAREFERENCE_azureml_container}/attribute_labeling/modelscope"
+#     MODELSCOPE_CACHE: "${config1.training.output_dir}/attribute_labeling/modelscope"
+#     OMP_NUM_THREADS: "14"
+#     CUDA_VISIBLE_DEVICES: "0"
+#   export:
+#     # raw_output/deepseek/llm_response_integer/v4-20260201-202214/checkpoint-159/
+
+#     lora_paths: null
+#     # lora_paths:
+#     # - "/tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/v4-20260201-202214/checkpoint-159/"
+#     # - "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/qwen/frozen_vit_frozen_llm_90_response_integer/v0-20250904-121124/checkpoint-630"
+#     # dataset_path: "/tmp/azureml_data_mount/raw_output/tl_inlay/tl_inlay_train_v1.jsonl"
+#     dataset_path: ${config1.training.train_dataset_paths[0]}
+
+
+#     # dataset_path: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/datasets/drawn_green_box_with_context/tl_inlay_train_v1.jsonl"
+#     # output_dir: "/tmp/azureml_data_mount/raw_output/deepseek/exported/v4-20260201-202214/checkpoint-159/"
+#     # output_dir: "/tmp/azureml_data_mount/raw_output/deepseek/exported/"
+#     output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/exported/${config1.model}
+
+
+# inference:
+#   # model: all
+#   # ----------------------------
+#   # Azure / filesystem paths
+#   # ----------------------------
+#   paths:
+
+#     image_folder: ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/images
+#     exported_model_root: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/exported/${config1.model}
+#     inference_output_dir: ${oc.env:AZURE_ML_OUTPUT_inference_results}/tl_inlay/${config1.model}

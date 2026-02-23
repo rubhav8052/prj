@@ -10,16 +10,182 @@
 #  of a patent, utility model or design.
 # ==============================================================================
 
-from dataclasses import asdict
+# from dataclasses import asdict
+# import os
+# import sys
+# from azureml.core import Run
+# from transformers import TrainerCallback
+# import swift.plugin
+# from swift.llm import sft_main, TrainArguments
+# from swift.utils import get_logger
+
+# from src.config.training_config import TrainingConfig
+# from src.utils.aml_utils import register_aml_model
+# logger = get_logger()
+# t
+# class AMLLogger(TrainerCallback):
+#     def __init__(self):
+#         super().__init__()
+#         self.run = Run.get_context()
+
+#     def on_log(self, args, state, control, logs=None, **kwargs):
+#         if logs:
+#             for name, val in logs.items():
+#                 if isinstance(val, (int, float)):
+#                     self.run.log(name, val)
+
+# swift.plugin.extra_callbacks.append(AMLLogger())                   
+
+# def run_swift_sft(config: TrainingConfig):
+#     """Runs Swift SFT (Supervised Fine-Tuning) based on the configuration."""
+#     print("Starting Swift SFT training...")
+#     print(f"   Model ID: {config.model_id}")
+#     print(f"   Train Datasets: {config.train_dataset_paths}")
+#     print(f"   Val Datasets: {config.val_dataset_paths}")
+#     print(f"   Output Dir: {config.output_dir}")
+#     print(f"   Train Type: {config.train_type}")
+#     print(f"   Freeze ViT: {config.freeze_vit}")
+#     print(f"   Freeze LLM Ratio: {config.freeze_parameters_ratio}")
+#     print(f"   Batch Size: {config.batch_size}")
+#     print(f"   Epochs: {config.num_train_epochs}")
+#     print(f"   Dtype: {config.torch_dtype}")
+#     print(f"   Max Length: {config.max_length}")
+#     print(f"   Learning Rate: {config.learning_rate}")
+#     print(f"   Gradient Accumulation: {config.gradient_accumulation_steps}")
+#     print(f"   Deepspeed: {config.deepspeed}")##
+#     print(f"   Extra Swift Args: {config.extra_swift_args}")##
+
+
+#     # Validate dataset paths
+#     all_datasets = config.train_dataset_paths + config.val_dataset_paths
+#     if not all_datasets:
+#          raise ValueError("At least one training or validation dataset path must be provided.")
+
+#     for d_path in all_datasets:
+#         if not os.path.exists(d_path):
+#              raise FileNotFoundError(f"Dataset file not found: {d_path}")
+
+#     os.makedirs(config.output_dir, exist_ok=True)
+
+#     # --- Prepare Swift SftArguments ---
+#     # Map TrainingConfig fields to SftArguments
+#     # Note: Some names might differ slightly or require specific formatting
+#     swift_args = {
+#         "model": config.model_id,
+#         "train_type": config.train_type,
+#         "dataset": config.train_dataset_paths, # Swift expects a list for 'dataset'
+#         "val_dataset": config.val_dataset_paths, # Swift expects a list for 'eval_dataset'
+#         "output_dir": config.output_dir,
+#         "num_train_epochs": config.num_train_epochs,
+#         "max_length": config.max_length,
+#         "gradient_accumulation_steps": config.gradient_accumulation_steps,
+#         "learning_rate": config.learning_rate,
+#         "save_strategy": config.save_strategy,
+#         "save_steps": config.save_steps if config.save_strategy == 'steps' else None, # Only set save_steps if strategy is 'steps'
+#         "save_total_limit": 3, # Keep last 3 checkpoints
+#         "logging_steps": 50, # Log every 50 steps (adjust as needed)
+#         "eval_steps": 50, # Evaluate every 50 steps (adjust as needed)
+#         "lora_rank": config.lora_rank if config.train_type == 'lora' else 8, # Default LoRA rank if not specified
+#         "lora_alpha": config.lora_rank * 2 if config.train_type == 'lora' else 16, # Common practice alpha = 2*rank
+#         "gradient_checkpointing": True, # Enable gradient checkpointing to save memory
+#         "torch_dtype": config.torch_dtype,
+#         "fp16": config.torch_dtype == 'float16',
+#         "bf16": config.torch_dtype == 'bfloat16',
+#         "deepspeed": config.deepspeed,
+#         "report_to": ["tensorboard", "azure_ml"], # Report metrics to TensorBoard and Azure ML
+#         "dataloader_num_workers": 1, # Adjust based on system capabilities
+#         "eval_strategy": "steps" if config.val_dataset_paths else "no", # Evaluate if val data provided
+#         "load_best_model_at_end": True if config.val_dataset_paths else False, # Load best model if evaluating
+#         "metric_for_best_model": "eval_loss" if config.val_dataset_paths else None, # Use eval loss to find best model
+#         "greater_is_better": False, # Lower eval loss is better
+#         "neftune_noise_alpha": 5, # Add noise for potentially better generalization
+#         "optim": "adamw_torch", # Use AdamW optimizer
+#         "lr_scheduler_type": "cosine", # Use cosine learning rate scheduler
+#         "warmup_ratio": 0.03, # Warmup ratio
+#         "weight_decay": 0.01, # Weight decay
+#         "max_grad_norm": 1.0, # Gradient clipping
+#         # Add extra arguments from config
+#         **config.extra_swift_args 
+#     }
+
+#     # --- Handle Vision-Language Model Specific Args ---
+#     if "vl" in config.model_id.lower() or "vision" in config.model_id.lower():
+#         swift_args["freeze_vit"] = config.freeze_vit
+#         if config.freeze_parameters_ratio is not None:
+#             swift_args["freeze_parameters_ratio"] = config.freeze_parameters_ratio
+#         # Add other VLM specific args if needed, e.g., vl_resampler_type
+
+#     # --- Instantiate SftArguments ---
+#     try:
+#         arguments = TrainArguments(**swift_args)
+#     except TypeError as e:
+#         logger.error(f"Error creating SftArguments. Check for invalid parameters: {e}")
+#         logger.error(f"Provided Swift Args: {swift_args}")
+#         sys.exit(1)
+#     except Exception as e:
+#         logger.error(f"An unexpected error occurred creating SftArguments: {e}")
+#         logger.error(f"Provided Swift Args: {swift_args}")
+#         sys.exit(1)
+
+
+#     # --- Run Swift SFT Main ---
+#     try:
+#         logger.info(f"Launching sft_main with arguments: {arguments}")
+#         results = sft_main(arguments)
+#         logger.info(f"Swift SFT finished. Results: {results}")
+#         print("Swift SFT training completed successfully.")
+#     except Exception as e:
+#         logger.error(f"Swift SFT training failed with an exception: {e}", exc_info=True)
+#         print(f"Error during Swift SFT training: {e}")
+#         sys.exit(1)
+
+#     print("\nAttempting to register the exported model in Azure ML...")
+#     try:
+#         # Convert config dataclass to dict for tags, ensuring serializability
+#         #///////////////////
+#         tags_dict = {}
+#         for key, value in asdict(config).items():
+#                 # Convert lists/dicts to strings, handle None, etc.
+#                 if isinstance(value, (list, dict)):
+#                     tags_dict[key] = str(value)
+#                     tags_dict[key] = 'workspaceblobstore'+tags_dict[key].split('workspaceblobstore')[-1]
+#                 elif value is None:
+#                     tags_dict[key] = "None"
+#                 else:
+#                     tags_dict[key] = str(value) # Ensure all values are strings
+
+#         # Generate a model name (example: qwen-7b-instruct-occlusion-merged)
+#         model_base_name = config.model.split('/')[-1].lower().replace('_', '-')
+#         # Try to get a meaningful name part from the output path
+#         output_path_parts = config.output_dir.strip('/').split('/')
+#         task_or_detail = output_path_parts[-1] if len(output_path_parts) > 1 else "exported"
+#         model_name = f"{model_base_name}-{task_or_detail}"
+
+#         register_aml_model(
+#             model_path=config.output_dir,
+#             tags=tags_dict,
+#             model_name=model_name
+#         )
+#     except ImportError:
+#             print("Warning: Azure ML SDK not found or not configured. Skipping model registration.")
+#     except Exception as reg_e:
+#         print(f"Error during Azure ML model registration: {reg_e}")
+#         # Decide if this error should cause the script to exit
+#         # sys.exit(1)
+
+
+
+
+
 import os
 import sys
+from omegaconf import DictConfig
 from azureml.core import Run
 from transformers import TrainerCallback
 import swift.plugin
 from swift.llm import sft_main, TrainArguments
 from swift.utils import get_logger
 
-from src.config.training_config import TrainingConfig
 from src.utils.aml_utils import register_aml_model
 logger = get_logger()
 
@@ -34,86 +200,95 @@ class AMLLogger(TrainerCallback):
                 if isinstance(val, (int, float)):
                     self.run.log(name, val)
 
-swift.plugin.extra_callbacks.append(AMLLogger())                   
+swift.plugin.extra_callbacks.append(AMLLogger())
 
-def run_swift_sft(config: TrainingConfig):
+
+def run_swift_sft(cfg: DictConfig):
     """Runs Swift SFT (Supervised Fine-Tuning) based on the configuration."""
+    training_cfg = cfg.training
+    
     print("Starting Swift SFT training...")
-    print(f"   Model ID: {config.model_id}")
-    print(f"   Train Datasets: {config.train_dataset_paths}")
-    print(f"   Val Datasets: {config.val_dataset_paths}")
-    print(f"   Output Dir: {config.output_dir}")
-    print(f"   Train Type: {config.train_type}")
-    print(f"   Freeze ViT: {config.freeze_vit}")
-    print(f"   Freeze LLM Ratio: {config.freeze_parameters_ratio}")
-    print(f"   Batch Size: {config.batch_size}")
-    print(f"   Epochs: {config.num_train_epochs}")
-    print(f"   Dtype: {config.torch_dtype}")
-    print(f"   Max Length: {config.max_length}")
-    print(f"   Learning Rate: {config.learning_rate}")
-    print(f"   Gradient Accumulation: {config.gradient_accumulation_steps}")
-    print(f"   Deepspeed: {config.deepspeed}")
-    print(f"   Extra Swift Args: {config.extra_swift_args}")
-
+    print(f"   Model ID: {training_cfg.model_id}")
+    print(f"   Train Datasets: {training_cfg.train_dataset_paths}")
+    print(f"   Val Datasets: {training_cfg.val_dataset_paths}")
+    print(f"   Output Dir: {training_cfg.output_dir}")
+    print(f"   Train Type: {training_cfg.train_type}")
+    print(f"   Freeze ViT: {training_cfg.freeze_vit}")
+    print(f"   Freeze LLM Ratio: {training_cfg.freeze_parameters_ratio}")
+    print(f"   Batch Size: {training_cfg.batch_size}")
+    print(f"   Epochs: {training_cfg.num_train_epochs}")
+    print(f"   Dtype: {training_cfg.torch_dtype}")
+    print(f"   Max Length: {training_cfg.max_length}")
+    print(f"   Learning Rate: {training_cfg.learning_rate}")
+    print(f"   Gradient Accumulation: {training_cfg.gradient_accumulation_steps}")
+    print(f"   Deepspeed: {training_cfg.deepspeed}")
+    print(f"   Extra Swift Args: {training_cfg.extra_swift_args}")
 
     # Validate dataset paths
-    all_datasets = config.train_dataset_paths + config.val_dataset_paths
+    train_paths = training_cfg.train_dataset_paths
+    val_paths = training_cfg.val_dataset_paths
+    
+    # Convert to lists if strings (for tl_inlay config)
+    if isinstance(train_paths, str):
+        train_paths = [train_paths]
+    if isinstance(val_paths, str):
+        val_paths = [val_paths]
+    
+    all_datasets = train_paths + val_paths
     if not all_datasets:
-         raise ValueError("At least one training or validation dataset path must be provided.")
+        raise ValueError("At least one training or validation dataset path must be provided.")
 
     for d_path in all_datasets:
         if not os.path.exists(d_path):
-             raise FileNotFoundError(f"Dataset file not found: {d_path}")
+            raise FileNotFoundError(f"Dataset file not found: {d_path}")
 
-    os.makedirs(config.output_dir, exist_ok=True)
+    os.makedirs(training_cfg.output_dir, exist_ok=True)
 
     # --- Prepare Swift SftArguments ---
-    # Map TrainingConfig fields to SftArguments
-    # Note: Some names might differ slightly or require specific formatting
     swift_args = {
-        "model": config.model_id,
-        "train_type": config.train_type,
-        "dataset": config.train_dataset_paths, # Swift expects a list for 'dataset'
-        "val_dataset": config.val_dataset_paths, # Swift expects a list for 'eval_dataset'
-        "output_dir": config.output_dir,
-        "num_train_epochs": config.num_train_epochs,
-        "max_length": config.max_length,
-        "gradient_accumulation_steps": config.gradient_accumulation_steps,
-        "learning_rate": config.learning_rate,
-        "save_strategy": config.save_strategy,
-        "save_steps": config.save_steps if config.save_strategy == 'steps' else None, # Only set save_steps if strategy is 'steps'
-        "save_total_limit": 3, # Keep last 3 checkpoints
-        "logging_steps": 50, # Log every 50 steps (adjust as needed)
-        "eval_steps": 50, # Evaluate every 50 steps (adjust as needed)
-        "lora_rank": config.lora_rank if config.train_type == 'lora' else 8, # Default LoRA rank if not specified
-        "lora_alpha": config.lora_rank * 2 if config.train_type == 'lora' else 16, # Common practice alpha = 2*rank
-        "gradient_checkpointing": True, # Enable gradient checkpointing to save memory
-        "torch_dtype": config.torch_dtype,
-        "fp16": config.torch_dtype == 'float16',
-        "bf16": config.torch_dtype == 'bfloat16',
-        "deepspeed": config.deepspeed,
-        "report_to": ["tensorboard", "azure_ml"], # Report metrics to TensorBoard and Azure ML
-        "dataloader_num_workers": 1, # Adjust based on system capabilities
-        "eval_strategy": "steps" if config.val_dataset_paths else "no", # Evaluate if val data provided
-        "load_best_model_at_end": True if config.val_dataset_paths else False, # Load best model if evaluating
-        "metric_for_best_model": "eval_loss" if config.val_dataset_paths else None, # Use eval loss to find best model
-        "greater_is_better": False, # Lower eval loss is better
-        "neftune_noise_alpha": 5, # Add noise for potentially better generalization
-        "optim": "adamw_torch", # Use AdamW optimizer
-        "lr_scheduler_type": "cosine", # Use cosine learning rate scheduler
-        "warmup_ratio": 0.03, # Warmup ratio
-        "weight_decay": 0.01, # Weight decay
-        "max_grad_norm": 1.0, # Gradient clipping
+        "model": training_cfg.model_id,
+        "train_type": training_cfg.train_type,
+        "dataset": train_paths,
+        "val_dataset": val_paths,
+        "output_dir": training_cfg.output_dir,
+        "num_train_epochs": training_cfg.num_train_epochs,
+        "max_length": training_cfg.max_length,
+        "gradient_accumulation_steps": training_cfg.gradient_accumulation_steps,
+        "learning_rate": training_cfg.learning_rate,
+        "save_strategy": training_cfg.save_strategy,
+        "save_steps": training_cfg.save_steps if training_cfg.save_strategy == 'steps' else None,
+        "save_total_limit": 3,
+        "logging_steps": 50,
+        "eval_steps": 50,
+        "lora_rank": training_cfg.lora_rank if training_cfg.train_type == 'lora' else 8,
+        "lora_alpha": training_cfg.lora_rank * 2 if training_cfg.train_type == 'lora' else 16,
+        "gradient_checkpointing": True,
+        "torch_dtype": training_cfg.torch_dtype,
+        "fp16": training_cfg.torch_dtype == 'float16',
+        "bf16": training_cfg.torch_dtype == 'bfloat16',
+        "deepspeed": training_cfg.deepspeed,
+        "report_to": ["tensorboard", "azure_ml"],
+        "dataloader_num_workers": 1,
+        "eval_strategy": "steps" if val_paths else "no",
+        "load_best_model_at_end": True if val_paths else False,
+        "metric_for_best_model": "eval_loss" if val_paths else None,
+        "greater_is_better": False,
+        "neftune_noise_alpha": 5,
+        "optim": "adamw_torch",
+        "lr_scheduler_type": "cosine",
+        "warmup_ratio": 0.03,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        
         # Add extra arguments from config
-        **config.extra_swift_args
-    }
+        **training_cfg.extra_swift_args
+        }
 
     # --- Handle Vision-Language Model Specific Args ---
-    if "vl" in config.model_id.lower() or "vision" in config.model_id.lower():
-        swift_args["freeze_vit"] = config.freeze_vit
-        if config.freeze_parameters_ratio is not None:
-            swift_args["freeze_parameters_ratio"] = config.freeze_parameters_ratio
-        # Add other VLM specific args if needed, e.g., vl_resampler_type
+    if "vl" in training_cfg.model_id.lower() or "vision" in training_cfg.model_id.lower():
+        swift_args["freeze_vit"] = training_cfg.freeze_vit
+        if training_cfg.freeze_parameters_ratio is not None:
+            swift_args["freeze_parameters_ratio"] = training_cfg.freeze_parameters_ratio
 
     # --- Instantiate SftArguments ---
     try:
@@ -126,7 +301,6 @@ def run_swift_sft(config: TrainingConfig):
         logger.error(f"An unexpected error occurred creating SftArguments: {e}")
         logger.error(f"Provided Swift Args: {swift_args}")
         sys.exit(1)
-
 
     # --- Run Swift SFT Main ---
     try:
@@ -141,27 +315,30 @@ def run_swift_sft(config: TrainingConfig):
 
     print("\nAttempting to register the exported model in Azure ML...")
     try:
-        # Convert config dataclass to dict for tags, ensuring serializability
+        # Convert DictConfig to dict and create tags
         tags_dict = {}
-        for key, value in asdict(config).items():
-                # Convert lists/dicts to strings, handle None, etc.
-                if isinstance(value, (list, dict)):
-                    tags_dict[key] = str(value)
-                    tags_dict[key] = 'workspaceblobstore'+tags_dict[key].split('workspaceblobstore')[-1]
-                elif value is None:
-                    tags_dict[key] = "None"
-                else:
-                    tags_dict[key] = str(value) # Ensure all values are strings
-
+        for key, value in dict(training_cfg).items():
+            # Convert lists/dicts to strings, handle None, etc.
+            if isinstance(value, (list, dict)):
+                tags_dict[key] = str(value)
+                # if 'workspaceblobstore' in tags_dict[key]:
+                #     tags_dict[key] = 'workspaceblobstore' + tags_dict[key].split('workspaceblobstore')[-1]
+                if 'azureml_container' in tags_dict[key]:
+                    tags_dict[key] = 'azureml_container' + tags_dict[key].split('azureml_container')[-1]
+            elif value is None:
+                tags_dict[key] = "None"
+            else:
+                tags_dict[key] = str(value)
+        
         # Generate a model name (example: qwen-7b-instruct-occlusion-merged)
-        model_base_name = config.model.split('/')[-1].lower().replace('_', '-')
+        model_base_name = training_cfg.model_id.split('/')[-1].lower().replace('_', '-')
         # Try to get a meaningful name part from the output path
-        output_path_parts = config.output_dir.strip('/').split('/')
+        output_path_parts = training_cfg.output_dir.strip('/').split('/')
         task_or_detail = output_path_parts[-1] if len(output_path_parts) > 1 else "exported"
         model_name = f"{model_base_name}-{task_or_detail}"
 
         register_aml_model(
-            model_path=config.output_dir,
+            model_path=training_cfg.output_dir,
             tags=tags_dict,
             model_name=model_name
         )
@@ -169,5 +346,4 @@ def run_swift_sft(config: TrainingConfig):
             print("Warning: Azure ML SDK not found or not configured. Skipping model registration.")
     except Exception as reg_e:
         print(f"Error during Azure ML model registration: {reg_e}")
-        # Decide if this error should cause the script to exit
-        # sys.exit(1)
+

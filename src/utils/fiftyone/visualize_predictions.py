@@ -45,9 +45,9 @@ DEFAULT_FIFTYONE_PORT = 5151
 MIN_IMAGE_HEIGHT = 30  # Minimum image height for filtering - applicable only for TL usecase
 
 # Default paths can be overridden with command-line arguments
-DEFAULT_GT = "C:/Users/UWI3KOR/Documents/ROW/latest_data/test_data_17sept/jsonl/row_deepseek_testset_17sept.jsonl"
-DEFAULT_PRED = "C:/Users/UWI3KOR/Documents/ROW/latest_data/test_data_17sept/results_row_deepseek_testset.json"
-DEFAULT_IMAGES = "C:/Users/UWI3KOR/Documents/ROW/latest_data/test_data_17sept/images_to_test_v222"
+DEFAULT_GT = "/home/fss2kor/dsp-op-attribute-labeling/gt.jsonl"
+DEFAULT_PRED = "/home/fss2kor/dsp-op-attribute-labeling/pred.json"
+DEFAULT_IMAGES = "/home/fss2kor/dsp-op-attribute-labeling/images/test_images"
 DEFAULT_DATASET = "evaluation_dataset"
 
 def is_row_data(gt_path, pred_path):

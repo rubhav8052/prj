@@ -64,7 +64,7 @@ class TrainingConfig:
 
     swift_libs_path: Optional[str] = "/deepseek_libs" if "deepseek" in model_id else "/qwen_libs"
 
-
+    loss_type = "focal_loss"
     # --- Example Configurations (Comments) ---
     # Occlusion - DeepSeek - Frozen ViT, 90% LLM Frozen
     # model_id: str = "deepseek-ai/deepseek-vl2-tiny"

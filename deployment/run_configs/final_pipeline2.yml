@@ -1,0 +1,100 @@
+
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+
+description: Data Prep → Train + Export → VLM Inference
+
+settings:
+  default_compute: azureml:compute-cls-2
+
+inputs:
+
+  image_dir:
+    type: uri_folder
+    path: azureml://datastores/azureml_container/paths/az_im/
+
+
+outputs:
+  data_prep_output:
+    type: uri_folder
+    mode: rw_mount
+    path: azureml://datastores/workspaceblobstore/paths/job_outputs/
+
+  model_dir:
+    type: uri_folder
+    mode: rw_mount
+    path: azureml://datastores/workspaceblobstore/paths/job_outputs/
+
+  inference_output:
+    type: uri_folder
+    mode: rw_mount
+    path: azureml://datastores/workspaceblobstore/paths/job_outputs/
+
+
+
+jobs:
+  data_prep_job:
+    component:
+      type: command
+      code: ../../
+      environment: azureml:envswifthydra:27
+      command: >
+        python src/scripts/run_pipeline_dataprep.py --config-name config1/tl_inlay2
+      inputs:
+
+        image_dir:
+          type: uri_folder
+      outputs:
+        prep_output:
+          type: uri_folder
+    inputs:
+      image_dir: ${{parent.inputs.image_dir}}
+    outputs:
+      prep_output: ${{parent.outputs.data_prep_output}}
+
+  train_export_job:
+    component:
+      type: command
+      code: ../../
+      environment: azureml:envswifthydra:27
+      command: "python src/scripts/run_pipeline.py  --config-name config1/tl_inlay2 \n"
+      inputs:
+        data_prep_dir:
+          type: uri_folder
+      outputs:
+        model_dir:
+          type: uri_folder
+    inputs:
+      data_prep_dir: ${{parent.jobs.data_prep_job.outputs.prep_output}}
+    outputs:
+      model_dir: ${{parent.outputs.model_dir}}
+    depends_on:
+    - data_prep_job
+
+  inference_job:
+    component:
+      type: command
+      code: ../../
+      environment: azureml:vllm_inf:2
+
+      command: "python src/scripts/run_inference.py --config-name config1/tl_inlay2 config1.model=deepseek"
+
+      inputs:
+        input_data:
+          type: uri_folder
+        processed_images:
+          type: uri_folder
+      outputs:
+        inference_results:
+          type: uri_folder
+
+    inputs:
+      input_data: ${{parent.jobs.train_export_job.outputs.model_dir}}
+      processed_images: ${{parent.jobs.data_prep_job.outputs.prep_output}}
+    outputs:
+      inference_results: ${{parent.outputs.inference_output}}
+
+    depends_on:
+    - train_export_job
+
+

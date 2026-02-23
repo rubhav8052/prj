@@ -1,0 +1,12 @@
+ENV: envswifthydra:32
+EXPERIMENT: tl_swift_training_data_prep
+COMPUTE: compute-cls-2
+RUN_NAME: TL Inlay data prep
+NODES: 1
+SCRIPT_ARGUMENTS:
+  --config-name: config1/tl_inlay
+DEBUG: false
+SRC: .
+ENTRY_SCRIPT: src/scripts/run_pipeline_dataprep.py
+
+
