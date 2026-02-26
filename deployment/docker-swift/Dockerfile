@@ -56,6 +56,8 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
 
 ENV PATH=$AZUREML_CONDA_ENVIRONMENT_PATH/bin:$PATH
 
+
+
 # -------------------------------------------------
 # Core Python utilities
 # -------------------------------------------------
@@ -92,13 +94,10 @@ RUN pip install --no-cache-dir \
     azure-storage-blob
     
 # ///////////////////////////////////////////////
-# RUN pip install --no-cache-dir setuptools==69.5.1
-# RUN pip install --no-cache-dir \
-#         mlflow==2.12.1 \
-#         azureml-mlflow==1.60.0
-
 RUN pip install --no-cache-dir \
-    azureml-mlflow==1.60.0
+    azureml-mlflow==1.60.0 \
+    mlflow==2.19.0 \
+    setuptools==69.5.1
 # ///////////////////////////////////////////////
 
 

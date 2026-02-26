@@ -1,4 +1,5 @@
-ENV: envswifthydra:32
+# ENV: envswifthydra:34
+ENV: "vllm_inf:3"
 EXPERIMENT: tl_swift_training_data_prep
 COMPUTE: compute-cls-2
 RUN_NAME: TL Inlay data prep

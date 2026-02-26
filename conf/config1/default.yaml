@@ -209,5 +209,5 @@ model: deepseek
 pipeline:
   stages:
     data_preparation: true
-    training: false
-    inference: false
+    training: true
+    inference: true

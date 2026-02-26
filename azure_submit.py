@@ -283,8 +283,8 @@ if __name__ == '__main__':
         print(f"⚠️  Environment not found, building from Dockerfile...")
         curated_env = Environment.from_dockerfile(
             name=env_name,
-            # dockerfile="deployment/docker-vlm/Dockerfile"
-            dockerfile="deployment/docker-swift/Dockerfile"
+            dockerfile="deployment/docker-vlm/Dockerfile"
+            # dockerfile="deployment/docker-swift/Dockerfile"
         )
         curated_env.register(workspace=ws)
         print(f"✅ Environment registered from Dockerfile: {env_name}")

@@ -41,8 +41,7 @@ jobs:
     component:
       type: command
       code: ../../
-      # environment: azureml:envswifthydra:27
-      environment: azureml:envswifthydra:32
+      environment: azureml:envswifthydra:34
       command: >
         python src/scripts/run_pipeline_dataprep.py --config-name ${{inputs.config_name}}
       inputs:
@@ -63,8 +62,7 @@ jobs:
     component:
       type: command
       code: ../../
-      # environment: azureml:envswifthydra:27
-      environment: azureml:envswifthydra:32
+      environment: azureml:envswifthydra:34
       command: "python src/scripts/run_pipeline.py  --config-name ${{inputs.config_name}} \n"
       inputs:
         data_prep_dir:
@@ -86,7 +84,7 @@ jobs:
     component:
       type: command
       code: ../../
-      environment: azureml:vllm_inf:2
+      environment: azureml:vllm_inf:3
 
       command: "python src/scripts/run_inference.py --config-name ${{inputs.config_name}} config1.model=deepseek"
 

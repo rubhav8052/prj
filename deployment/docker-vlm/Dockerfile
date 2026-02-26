@@ -39,5 +39,11 @@ timm \
 hydra-core==1.3.2 \
 omegaconf==2.3.0
 
+RUN pip install --no-cache-dir \
+    azureml-mlflow==1.60.0 \
+    mlflow==2.19.0 \
+    setuptools==69.5.1
+
+
 ENV LD_LIBRARY_PATH=$AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH
 
