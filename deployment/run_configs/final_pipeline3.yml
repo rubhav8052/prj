@@ -15,8 +15,14 @@ inputs:
 
   config_name:
     type: string
-    default: config1/tl_inlay2
 
+  # image_dir_uri:
+  #   type: string
+  #   default: "azureml://datastores/azureml_container/paths/az_im/"
+
+  # output_base_uri:
+  #   type: string
+  #   default: "azureml://datastores/workspaceblobstore/paths/job_outputs/"
 
 outputs:
   data_prep_output:
@@ -49,12 +55,18 @@ jobs:
           type: uri_folder
         config_name:
           type: string
+          # image_dir_uri:
+          #   type: string
+          # output_base_uri:
+          #   type: string
       outputs:
         prep_output:
           type: uri_folder
     inputs:
       image_dir: ${{parent.inputs.image_dir}}
       config_name: ${{parent.inputs.config_name}}
+      # image_dir_uri: ${{parent.inputs.image_dir_uri}}
+      # output_base_uri: ${{parent.inputs.output_base_uri}}
     outputs:
       prep_output: ${{parent.outputs.data_prep_output}}
 
@@ -69,12 +81,15 @@ jobs:
           type: uri_folder
         config_name:
           type: string
+          # output_base_uri:
+          #   type: string
       outputs:
         model_dir:
           type: uri_folder
     inputs:
       data_prep_dir: ${{parent.jobs.data_prep_job.outputs.prep_output}}
       config_name: ${{parent.inputs.config_name}}
+      # output_base_uri: ${{parent.inputs.output_base_uri}}
     outputs:
       model_dir: ${{parent.outputs.model_dir}}
     depends_on:
@@ -95,6 +110,8 @@ jobs:
           type: uri_folder
         config_name:
           type: string
+          # output_base_uri:
+          #   type: string
       outputs:
         inference_results:
           type: uri_folder
@@ -103,6 +120,7 @@ jobs:
       input_data: ${{parent.jobs.train_export_job.outputs.model_dir}}
       processed_images: ${{parent.jobs.data_prep_job.outputs.prep_output}}
       config_name: ${{parent.inputs.config_name}}
+      # output_base_uri: ${{parent.inputs.output_base_uri}}
     outputs:
       inference_results: ${{parent.outputs.inference_output}}
 

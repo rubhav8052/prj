@@ -60,8 +60,6 @@ training:
   # output_dir: "${AZUREML_DATAREFERENCE_workspaceblobstore}/attribute_labeling/traffic_lights_inlay/deepseek/frozen_vit_frozen_llm_90_response_integer/"
   # output_dir: /tmp/azureml_data_mount/raw_output/deepseek/llm_response_integer/
   output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}
-
-
   # Training Configuration
   train_type: "lora" # Options: 'lora', 'full'
   lora_rank: 256

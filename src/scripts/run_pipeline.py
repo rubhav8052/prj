@@ -353,6 +353,34 @@ from hydra.core.hydra_config import HydraConfig
 
 import mlflow
 
+
+# Add repo root to Python path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.dirname(script_dir)
+repo_root = os.path.dirname(src_dir)
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
+# ── MLflow logging helpers ────────────────────────────────────────────────────
+from src.ml_flow.train_exp import (
+    log_training_start,
+    log_training_params,
+    log_training_checkpoints,
+    log_export_params,
+    log_export_metrics,
+    log_training_lineage,
+    log_training_status,
+)
+
+
+
+
+# def count_lines(path) -> int:
+#     """Count lines in a JSONL file = number of samples."""
+#     return sum(1 for _ in open(path)) if os.path.exists(str(path)) else 0
+
+from src.data_preparation.prepare_usecase_dataset import prepare_datasets
+from src.utils.file_utils import set_environment_variables
 def get_latest_lora_checkpoint(output_dir: str, lora_paths=None) -> list:
     """
     Auto-detect latest LoRA checkpoint if lora_paths is None.
@@ -416,21 +444,6 @@ def get_latest_lora_checkpoint(output_dir: str, lora_paths=None) -> list:
 
 
 
-# Add repo root to Python path
-script_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.dirname(script_dir)
-repo_root = os.path.dirname(src_dir)
-if repo_root not in sys.path:
-    sys.path.insert(0, repo_root)
-
-def count_lines(path) -> int:
-    """Count lines in a JSONL file = number of samples."""
-    return sum(1 for _ in open(path)) if os.path.exists(str(path)) else 0
-
-from src.data_preparation.prepare_usecase_dataset import prepare_datasets
-from src.utils.file_utils import set_environment_variables
-
-
 @hydra.main(version_base=None, config_path="../../conf", config_name="config1/default")
 def main(cfg: DictConfig) -> None:
     
@@ -459,17 +472,21 @@ def main(cfg: DictConfig) -> None:
 
     experiment_name = os.environ.get('AZUREML_ROOT_RUN_ID') 
     
-    # mlflow.set_experiment("attribute-labeling-pipeline")
-    mlflow.set_tag("mlflow.runName", f"train_export-{config_name.replace('/', '-')}")
-    # with mlflow.start_run(run_name=f"train_export-{config_name.replace('/', '-')}"):
-    mlflow.set_tags({
-    "stage":       "train_export",
-    "stage_enabled": cfg.pipeline.stages.training,
-    "config_name": config_name,
-    "config_key":  config_key,
-    "model_id":    cfg.training.model_id,
-    "experiment_name": experiment_name
-    })
+    # # mlflow.set_experiment("attribute-labeling-pipeline")
+    # mlflow.set_tag("mlflow.runName", f"train_export-{config_name.replace('/', '-')}[{experiment_name}]")
+    # # mlflow.set_tag("mlflow.runName", f"train_export-{config_name.replace('/', '-')}")
+    # # with mlflow.start_run(run_name=f"train_export-{config_name.replace('/', '-')}"):
+    # mlflow.set_tags({
+    # "stage":       "train_export",
+    # "stage_enabled": cfg.pipeline.stages.training,
+    # "config_name": config_name,
+    # "config_key":  config_key,
+    # "model_id":    cfg.training.model_id,
+    # "experiment_name": experiment_name
+    # })
+
+    # MLflow: run name + tags
+    log_training_start(cfg, config_name, config_key, experiment_name)
 
     # =====================================================================
     # STAGE 2: TRAINING
@@ -527,33 +544,39 @@ def main(cfg: DictConfig) -> None:
             print(f"Output: {cfg.training.output_dir}")
             
             # ← ADDED: log training params
-            mlflow.log_params({
-                "train.model_id":                    cfg.training.model_id,
-                "train.train_type":                  cfg.training.get("train_type", ""),
-                "train.lora_rank":                   cfg.training.get("lora_rank", ""),
-                "train.freeze_vit":                  cfg.training.get("freeze_vit", ""),
-                "train.freeze_parameters_ratio":     cfg.training.get("freeze_parameters_ratio", ""),
-                "train.num_train_epochs":            cfg.training.get("num_train_epochs", ""),
-                "train.batch_size":                  cfg.training.get("batch_size", ""),
-                "train.gradient_accumulation_steps": cfg.training.get("gradient_accumulation_steps", ""),
-                "train.learning_rate":               cfg.training.get("learning_rate", ""),
-                "train.loss_type":                   cfg.training.get("loss_type", ""),
-                "train.torch_dtype":                 cfg.training.get("torch_dtype", ""),
-                "train.output_dir":                  cfg.training.output_dir,
-            })
+            # mlflow.log_params({
+            #     "train.model_id":                    cfg.training.model_id,
+            #     "train.train_type":                  cfg.training.get("train_type", ""),
+            #     "train.lora_rank":                   cfg.training.get("lora_rank", ""),
+            #     "train.freeze_vit":                  cfg.training.get("freeze_vit", ""),
+            #     "train.freeze_parameters_ratio":     cfg.training.get("freeze_parameters_ratio", ""),
+            #     "train.num_train_epochs":            cfg.training.get("num_train_epochs", ""),
+            #     "train.batch_size":                  cfg.training.get("batch_size", ""),
+            #     "train.gradient_accumulation_steps": cfg.training.get("gradient_accumulation_steps", ""),
+            #     "train.learning_rate":               cfg.training.get("learning_rate", ""),
+            #     "train.loss_type":                   cfg.training.get("loss_type", ""),
+            #     "train.torch_dtype":                 cfg.training.get("torch_dtype", ""),
+            #     "train.output_dir":                  cfg.training.output_dir,
+            # })
 
-            train_path = train_dataset_paths[0] if isinstance(train_dataset_paths, (list, ListConfig)) else train_dataset_paths
-            val_path   = val_dataset_paths[0]   if isinstance(val_dataset_paths,   (list, ListConfig)) else val_dataset_paths
+            
 
-            n_train = count_lines(train_path)
-            n_val   = count_lines(val_path)
-            # ← ADDED: derived metrics useful for comparison
-            effective_batch = cfg.training.get("batch_size", 1) * cfg.training.get("gradient_accumulation_steps", 1)
-            mlflow.log_metrics({
-                "train.effective_batch_size": effective_batch,
-                "train.n_train_samples":      n_train,
-                "train.n_val_samples":        n_val,
-            })
+            # train_path = train_dataset_paths[0] if isinstance(train_dataset_paths, (list, ListConfig)) else train_dataset_paths
+            # val_path   = val_dataset_paths[0]   if isinstance(val_dataset_paths,   (list, ListConfig)) else val_dataset_paths
+
+            # n_train = count_lines(train_path)
+            # n_val   = count_lines(val_path)
+            # # ← ADDED: derived metrics useful for comparison
+            # effective_batch = cfg.training.get("batch_size", 1) * cfg.training.get("gradient_accumulation_steps", 1)
+            # mlflow.log_metrics({
+            #     "train.effective_batch_size": effective_batch,
+            #     "train.n_train_samples":      n_train,
+            #     "train.n_val_samples":        n_val,
+            # })
+
+
+            # ── MLflow: params + derived metrics ──────────────────────────────
+            log_training_params(cfg)
 
             # Add swift libs path if specified
             swift_libs_path = cfg.training.get('swift_libs_path', None)
@@ -603,97 +626,101 @@ def main(cfg: DictConfig) -> None:
             print("\nTraining completed!")
             
 
-            # ← ADDED: log checkpoint metrics after training
-            checkpoints = sorted(
-                [d for d in Path(cfg.training.output_dir).rglob("checkpoint-*") if d.is_dir()],
-                key=lambda x: int(x.name.split("-")[1])
-            )
-            if checkpoints:
-                latest_ckpt_step = int(checkpoints[-1].name.split("-")[1])
-                mlflow.log_metric("train.total_checkpoints_saved", len(checkpoints))
-                mlflow.log_metric("train.final_checkpoint_step",   latest_ckpt_step)
-                mlflow.set_tag("train.latest_checkpoint", str(checkpoints[-1]))
+            # # ← ADDED: log checkpoint metrics after training
+            # checkpoints = sorted(
+            #     [d for d in Path(cfg.training.output_dir).rglob("checkpoint-*") if d.is_dir()],
+            #     key=lambda x: int(x.name.split("-")[1])
+            # )
+            # if checkpoints:
+            #     latest_ckpt_step = int(checkpoints[-1].name.split("-")[1])
+            #     mlflow.log_metric("train.total_checkpoints_saved", len(checkpoints))
+            #     mlflow.log_metric("train.final_checkpoint_step",   latest_ckpt_step)
+            #     mlflow.set_tag("train.latest_checkpoint", str(checkpoints[-1]))
 
                 
-                # ── Read trainer_state.json for summary + curve metrics ───────
-                trainer_state_path = checkpoints[-1] / "trainer_state.json"
-                if trainer_state_path.exists():
-                    with open(trainer_state_path) as f:
-                        trainer_state = json.load(f)
+            #     # ── Read trainer_state.json for summary + curve metrics ───────
+            #     trainer_state_path = checkpoints[-1] / "trainer_state.json"
+            #     if trainer_state_path.exists():
+            #         with open(trainer_state_path) as f:
+            #             trainer_state = json.load(f)
 
-                    log_history = trainer_state.get("log_history", [])
+            #         log_history = trainer_state.get("log_history", [])
 
-                    # ── Summary metrics ───────────────────────────────────────
-                    best_ckpt = trainer_state.get("best_model_checkpoint", "")
-                    mlflow.log_metrics({
-                        "train.best_loss":          trainer_state.get("best_metric", 0),
-                        "train.final_epoch":        trainer_state.get("epoch", 0),
-                        "train.actual_total_steps": trainer_state.get("global_step", 0),
-                        "train.max_steps":          trainer_state.get("max_steps", 0),
-                        "train.train_batch_size":   trainer_state.get("train_batch_size", 0),
-                    })
-                    mlflow.set_tag("train.best_checkpoint", best_ckpt)
-                    mlflow.set_tag("train.best_is_final",   str(best_ckpt == str(checkpoints[-1])))
+            #         # ── Summary metrics ───────────────────────────────────────
+            #         best_ckpt = trainer_state.get("best_model_checkpoint", "")
+            #         mlflow.log_metrics({
+            #             "train.best_loss":          trainer_state.get("best_metric", 0),
+            #             "train.final_epoch":        trainer_state.get("epoch", 0),
+            #             "train.actual_total_steps": trainer_state.get("global_step", 0),
+            #             "train.max_steps":          trainer_state.get("max_steps", 0),
+            #             "train.train_batch_size":   trainer_state.get("train_batch_size", 0),
+            #         })
+            #         mlflow.set_tag("train.best_checkpoint", best_ckpt)
+            #         mlflow.set_tag("train.best_is_final",   str(best_ckpt == str(checkpoints[-1])))
 
-                    # ── Loss improvement ──────────────────────────────────────
-                    train_entries = [e for e in log_history if "loss" in e]
-                    if len(train_entries) >= 2:
-                        first_loss       = train_entries[0]["loss"]
-                        last_loss        = train_entries[-1]["loss"]
-                        loss_improvement = round(first_loss - last_loss, 4)
-                        loss_improvement_pct = round((loss_improvement / first_loss) * 100, 2) if first_loss > 0 else 0
-                        mlflow.log_metrics({
-                            "train.first_loss":           first_loss,
-                            "train.last_loss":            last_loss,
-                            "train.loss_improvement":     loss_improvement,
-                            "train.loss_improvement_pct": loss_improvement_pct,
-                        })
+            #         # ── Loss improvement ──────────────────────────────────────
+            #         train_entries = [e for e in log_history if "loss" in e]
+            #         if len(train_entries) >= 2:
+            #             first_loss       = train_entries[0]["loss"]
+            #             last_loss        = train_entries[-1]["loss"]
+            #             loss_improvement = round(first_loss - last_loss, 4)
+            #             loss_improvement_pct = round((loss_improvement / first_loss) * 100, 2) if first_loss > 0 else 0
+            #             mlflow.log_metrics({
+            #                 "train.first_loss":           first_loss,
+            #                 "train.last_loss":            last_loss,
+            #                 "train.loss_improvement":     loss_improvement,
+            #                 "train.loss_improvement_pct": loss_improvement_pct,
+            #             })
 
-                    # ── Eval loss improvement ─────────────────────────────────
-                    eval_entries = [e for e in log_history if "eval_loss" in e]
-                    if eval_entries:
-                        mlflow.log_metrics({
-                            "train.first_eval_loss": eval_entries[0]["eval_loss"],
-                            "train.last_eval_loss":  eval_entries[-1]["eval_loss"],
-                            "train.best_eval_loss":  min(e["eval_loss"] for e in eval_entries),
-                        })
+            #         # ── Eval loss improvement ─────────────────────────────────
+            #         eval_entries = [e for e in log_history if "eval_loss" in e]
+            #         if eval_entries:
+            #             mlflow.log_metrics({
+            #                 "train.first_eval_loss": eval_entries[0]["eval_loss"],
+            #                 "train.last_eval_loss":  eval_entries[-1]["eval_loss"],
+            #                 "train.best_eval_loss":  min(e["eval_loss"] for e in eval_entries),
+            #             })
 
-                    # ── Token accuracy improvement ────────────────────────────
-                    token_entries = [e for e in log_history if "token_acc" in e]
-                    if token_entries:
-                        eval_token_entries = [e for e in log_history if "eval_token_acc" in e]
-                        mlflow.log_metrics({
-                            "train.first_token_acc": token_entries[0]["token_acc"],
-                            "train.last_token_acc":  token_entries[-1]["token_acc"],
-                            "train.best_eval_token_acc": max(
-                                e["eval_token_acc"] for e in eval_token_entries
-                            ) if eval_token_entries else 0,
-                        })
+            #         # ── Token accuracy improvement ────────────────────────────
+            #         token_entries = [e for e in log_history if "token_acc" in e]
+            #         if token_entries:
+            #             eval_token_entries = [e for e in log_history if "eval_token_acc" in e]
+            #             mlflow.log_metrics({
+            #                 "train.first_token_acc": token_entries[0]["token_acc"],
+            #                 "train.last_token_acc":  token_entries[-1]["token_acc"],
+            #                 "train.best_eval_token_acc": max(
+            #                     e["eval_token_acc"] for e in eval_token_entries
+            #                 ) if eval_token_entries else 0,
+            #             })
 
-                    # ── Final training speed + memory ─────────────────────────
-                    if train_entries:
-                        last_entry = train_entries[-1]
-                        mlflow.log_metrics({
-                            "train.final_train_speed_iter_per_s": last_entry.get("train_speed(iter/s)", 0),
-                            "train.final_memory_gb":              last_entry.get("memory(GiB)", 0),
-                        })
+            #         # ── Final training speed + memory ─────────────────────────
+            #         if train_entries:
+            #             last_entry = train_entries[-1]
+            #             mlflow.log_metrics({
+            #                 "train.final_train_speed_iter_per_s": last_entry.get("train_speed(iter/s)", 0),
+            #                 "train.final_memory_gb":              last_entry.get("memory(GiB)", 0),
+            #             })
 
-                    # ── Per epoch eval metrics (gives epoch-level graphs) ─────
-                    for entry in log_history:
-                        if "eval_loss" in entry:
-                            epoch = round(entry.get("epoch", 0))
-                            mlflow.log_metric("train.eval_loss_per_epoch",      entry["eval_loss"],            step=epoch)
-                            mlflow.log_metric("train.eval_token_acc_per_epoch", entry.get("eval_token_acc", 0), step=epoch)
+            #         # ── Per epoch eval metrics (gives epoch-level graphs) ─────
+            #         for entry in log_history:
+            #             if "eval_loss" in entry:
+            #                 epoch = round(entry.get("epoch", 0))
+            #                 mlflow.log_metric("train.eval_loss_per_epoch",      entry["eval_loss"],            step=epoch)
+            #                 mlflow.log_metric("train.eval_token_acc_per_epoch", entry.get("eval_token_acc", 0), step=epoch)
 
-                    print(f"Logged summary + curve metrics from trainer_state.json")
-                else:
-                    print(f"trainer_state.json not found at: {trainer_state_path}")
+            #         print(f"Logged summary + curve metrics from trainer_state.json")
+            #     else:
+            #         print(f"trainer_state.json not found at: {trainer_state_path}")
 
 
-            mlflow.set_tag("train.status", "SUCCESS")
+            # mlflow.set_tag("train.status", "SUCCESS")
+            
+            # ── MLflow: checkpoint metrics ────────────────────────────────────
+            log_training_checkpoints(cfg)
+            log_training_status("train", "SUCCESS")
 
         except Exception as e:
-            mlflow.set_tag("train.status", "FAILED")
+            log_training_status("train", "FAILED")
             print(f"\nTraining failed: {str(e)}")
             import traceback
             traceback.print_exc()
@@ -748,18 +775,21 @@ def main(cfg: DictConfig) -> None:
 
                 print(f"Export output_dir set to: {export_cfg.output_dir}")
 
-                mlflow.log_params({
-                    "export.model":       export_cfg.get("model", ""),
-                    "export.lora_path":   str(export_cfg.lora_paths[0]),
-                    "export.output_dir":  export_cfg.output_dir,
-                    "export.merge_lora":  export_cfg.get("merge_lora", True),
-                })
-                mlflow.set_tags({
-                    "export.version_dir":  version_dir,
-                    "export.checkpoint":   checkpoint_name,
-                })
-                mlflow.log_metric("export.checkpoint_step", int(checkpoint_name.split("-")[1]))
-            
+                # mlflow.log_params({
+                #     "export.model":       export_cfg.get("model", ""),
+                #     "export.lora_path":   str(export_cfg.lora_paths[0]),
+                #     "export.output_dir":  export_cfg.output_dir,
+                #     "export.merge_lora":  export_cfg.get("merge_lora", True),
+                # })
+                # mlflow.set_tags({
+                #     "export.version_dir":  version_dir,
+                #     "export.checkpoint":   checkpoint_name,
+                # })
+                # mlflow.log_metric("export.checkpoint_step", int(checkpoint_name.split("-")[1]))
+
+                # ── MLflow: export params ─────────────────────────────────────────
+                log_export_params(export_cfg, version_dir, checkpoint_name)
+
             else:
                 print("Error: No LoRA checkpoints found. Cannot proceed with Export.")
                 sys.exit(1)
@@ -804,53 +834,54 @@ def main(cfg: DictConfig) -> None:
             
             print("\nExport completed successfully!")
 
-            # ── Log exported model size on disk ───────────────────────────────
-            export_path = Path(export_cfg.output_dir)
-            if export_path.exists():
-                export_size_gb = sum(
-                    f.stat().st_size for f in export_path.rglob("*") if f.is_file()
-                ) / (1024 ** 3)
-                mlflow.log_metric("export.model_size_gb", round(export_size_gb, 3))
-                print(f"Exported model size: {export_size_gb:.3f} GB")
+            # # ── Log exported model size on disk ───────────────────────────────
+            # export_path = Path(export_cfg.output_dir)
+            # if export_path.exists():
+            #     export_size_gb = sum(
+            #         f.stat().st_size for f in export_path.rglob("*") if f.is_file()
+            #     ) / (1024 ** 3)
+            #     mlflow.log_metric("export.model_size_gb", round(export_size_gb, 3))
+            #     print(f"Exported model size: {export_size_gb:.3f} GB")
 
 
 
-            output_dir = Path(export_cfg.output_dir)
-            lineage_path = output_dir / "lineage"
-            lineage_path.mkdir(parents=True, exist_ok=True)
+            # output_dir = Path(export_cfg.output_dir)
+            # lineage_path = output_dir / "lineage"
+            # lineage_path.mkdir(parents=True, exist_ok=True)
 
-            # Create a lineage dictionary to track inputs and outputs
-            lineage = {
-                "inputs": {
-                    "model_id": cfg.training.model_id,
-                    "lora_checkpoint": str(export_cfg.lora_paths[0]),
-                    "train_datasets": OmegaConf.to_container(cfg.training.get('train_dataset_paths', []), resolve=True),
-                },
-                "outputs": {
-                    "export_dir": str(output_dir)
-                }
-            }
-            # Write the lineage information to a JSON file
-            with open(lineage_path / "lineage.json", "w") as f:
-                json.dump(lineage, f, indent=2)
-            print(f"Lineage written to: {lineage_path / 'lineage.json'}")
+            # # Create a lineage dictionary to track inputs and outputs
+            # lineage = {
+            #     "inputs": {
+            #         "model_id": cfg.training.model_id,
+            #         "lora_checkpoint": str(export_cfg.lora_paths[0]),
+            #         "train_datasets": OmegaConf.to_container(cfg.training.get('train_dataset_paths', []), resolve=True),
+            #     },
+            #     "outputs": {
+            #         "export_dir": str(output_dir)
+            #     }
+            # }
+            # # Write the lineage information to a JSON file
+            # with open(lineage_path / "lineage.json", "w") as f:
+            #     json.dump(lineage, f, indent=2)
+            # print(f"Lineage written to: {lineage_path / 'lineage.json'}")
 
-            # Create a path to save the configuration
-            config_path = output_dir / "config"
-            config_path.mkdir(parents=True, exist_ok=True)
+            # # Create a path to save the configuration
+            # config_path = output_dir / "config"
+            # config_path.mkdir(parents=True, exist_ok=True)
 
-            # Write the full, resolved Hydra configuration to a YAML file
-            with open(config_path / "resolved_config.yaml", "w") as f:
-                f.write(OmegaConf.to_yaml(cfg))
-            print(f"Config written to: {config_path / 'resolved_config.yaml'}")
-
-
-
-
-            mlflow.set_tag("export.status", "SUCCESS")  
+            # # Write the full, resolved Hydra configuration to a YAML file
+            # with open(config_path / "resolved_config.yaml", "w") as f:
+            #     f.write(OmegaConf.to_yaml(cfg))
+            # print(f"Config written to: {config_path / 'resolved_config.yaml'}")
+            # mlflow.set_tag("export.status", "SUCCESS")  
+            
+            # ── MLflow: export metrics + lineage ──────────────────────────────
+            log_export_metrics(export_cfg)
+            log_training_lineage(cfg, export_cfg, version_dir, checkpoint_name)
+            log_training_status("export", "SUCCESS")
             
         except Exception as e:
-            mlflow.set_tag("export.status", "FAILED")
+            log_training_status("export", "FAILED")
             print(f"\nExport failed: {str(e)}")
             import traceback
             traceback.print_exc()

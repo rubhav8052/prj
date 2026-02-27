@@ -341,14 +341,23 @@ from omegaconf import DictConfig, OmegaConf
 from hydra import main as hydra_main
 from hydra.core.hydra_config import HydraConfig
 
-
-
 # Add repo root to Python path to find other modules
 script_dir = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.dirname(script_dir)
 repo_root = os.path.dirname(src_dir)
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
+
+# ── MLflow logging helpers ────────────────────────────────────────────────────
+from src.ml_flow.data_prep import (
+    log_dataprep_start,
+    log_dataprep_params,
+    log_dataprep_metrics,
+    log_dataprep_lineage,
+    log_dataprep_status,
+)
+
+
 
 # Import the function that does the actual work
 from src.data_preparation.prepare_usecase_dataset import prepare_datasets
@@ -387,16 +396,20 @@ def main(cfg: DictConfig) -> None:
 
     experiment_name = os.environ.get('AZUREML_ROOT_RUN_ID') 
     
-    mlflow.set_tag("mlflow.runName", f"data_prep-{config_name.replace('/', '-')}")
-    # ── MLflow: log tags ──────────────────────────────────────
-    mlflow.set_tags({
-        "stage":       "data_prep",
-        "stage_enabled": cfg.pipeline.stages.data_preparation,
-        "config_name": config_name,
-        "config_key":  config_key,
-        "attribute":   cfg.data_prep.attribute_col,
-        "experiment_name": experiment_name
-    })
+    # mlflow.set_tag("mlflow.runName", f"data_prep-{config_name.replace('/', '-')}[{experiment_name}]")
+    # # ── MLflow: log tags ──────────────────────────────────────
+    # mlflow.set_tags({
+    #     "stage":       "data_prep",
+    #     "stage_enabled": cfg.pipeline.stages.data_preparation,
+    #     "config_name": config_name,
+    #     "config_key":  config_key,
+    #     "attribute":   cfg.data_prep.attribute_col,
+    #     "experiment_name": experiment_name
+    # })
+
+    # MLflow: run name + tags
+    log_dataprep_start(cfg, config_name, config_key, experiment_name)
+
     if cfg.pipeline.stages.data_preparation:
     # if False:
         print("\n" + "="*80)
@@ -429,26 +442,27 @@ def main(cfg: DictConfig) -> None:
             print(f"   Output: {cfg.data_prep.output_dir}")
 
 
-            # ── MLflow: log params ────────────────────────────────────
-            mlflow.log_params({
-                "data.num_csvs":               len(cfg.data_prep.input_csv_paths),
-                "data.index_col":              cfg.data_prep.index_col,
-                "data.attribute_col":          cfg.data_prep.attribute_col,
-                "data.test_size":              cfg.data_prep.test_size,
-                "data.val_size":               cfg.data_prep.val_size,
-                "data.random_state":           cfg.data_prep.random_state,
-                "data.min_height_width_pixel": cfg.data_prep.min_height_width_pixel,
-                "data.context_percent":        cfg.data_prep.context_percent,
-                "data.output_dir":             cfg.data_prep.output_dir,
-                "data.input_csvs":             str(OmegaConf.to_container(cfg.data_prep.input_csv_paths, resolve=True)),
-                "data.image_base_dir":         cfg.data_prep.image_base_dir,
-                "data.train_file":             cfg.data_prep.attribute_train_file,
-                "data.val_file":               cfg.data_prep.attribute_val_file,
-                "data.test_file":              cfg.data_prep.attribute_test_file,
-            })
+            # # ── MLflow: log params ────────────────────────────────────
+            # mlflow.log_params({
+            #     "data.num_csvs":               len(cfg.data_prep.input_csv_paths),
+            #     "data.index_col":              cfg.data_prep.index_col,
+            #     "data.attribute_col":          cfg.data_prep.attribute_col,
+            #     "data.test_size":              cfg.data_prep.test_size,
+            #     "data.val_size":               cfg.data_prep.val_size,
+            #     "data.random_state":           cfg.data_prep.random_state,
+            #     "data.min_height_width_pixel": cfg.data_prep.min_height_width_pixel,
+            #     "data.context_percent":        cfg.data_prep.context_percent,
+            #     "data.output_dir":             cfg.data_prep.output_dir,
+            #     "data.input_csvs":             str(OmegaConf.to_container(cfg.data_prep.input_csv_paths, resolve=True)),
+            #     "data.image_base_dir":         cfg.data_prep.image_base_dir,
+            #     "data.train_file":             cfg.data_prep.attribute_train_file,
+            #     "data.val_file":               cfg.data_prep.attribute_val_file,
+            #     "data.test_file":              cfg.data_prep.attribute_test_file,
+            # })
 
 
-            
+            # ── MLflow: params ────────────────────────────────────────────────────
+            log_dataprep_params(cfg)
 
             print("\nStarting data preparation...")
             # Run the core data preparation function
@@ -462,62 +476,32 @@ def main(cfg: DictConfig) -> None:
             print(f"   - {os.path.join(cfg.data_prep.output_dir, cfg.data_prep.attribute_test_file)}")
             
             print("\nData preparation completed successfully!")
+            # ── MLflow: metrics + lineage ─────────────────────────────────────────
+            n_train, n_val, n_test = log_dataprep_metrics(cfg)
+            log_dataprep_lineage(cfg, n_train, n_val, n_test)
 
-            # ← ADDED: write lineage.json to output dir ────────────────────────
-            # Stored on Azure datastore alongside JSONL files — no MLflow
-            # artifact store needed.
-            # ── MLflow: log sample counts ─────────────────────────────
-            train_path = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_train_file
-            val_path   = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_val_file
-            test_path  = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_test_file
+            # # ← ADDED: write lineage.json to output dir ────────────────────────
+            # # Stored on Azure datastore alongside JSONL files — no MLflow
+            # # artifact store needed.
+            # # ── MLflow: log sample counts ─────────────────────────────
+            # train_path = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_train_file
+            # val_path   = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_val_file
+            # test_path  = Path(cfg.data_prep.output_dir) / cfg.data_prep.attribute_test_file
 
-            n_train = count_lines(train_path)
-            n_val   = count_lines(val_path)
-            n_test  = count_lines(test_path)
-            n_total = n_train + n_val + n_test
+            # n_train = count_lines(train_path)
+            # n_val   = count_lines(val_path)
+            # n_test  = count_lines(test_path)
+            # n_total = n_train + n_val + n_test
 
-            mlflow.log_metrics({
-                "data.n_train_samples": n_train,
-                "data.n_val_samples":   n_val,
-                "data.n_test_samples":  n_test,
-                "data.n_total_samples": n_total,
-            })
-            print(f"Split → train={n_train} | val={n_val} | test={n_test} | total={n_total}")
+            # mlflow.log_metrics({
+            #     "data.n_train_samples": n_train,
+            #     "data.n_val_samples":   n_val,
+            #     "data.n_test_samples":  n_test,
+            #     "data.n_total_samples": n_total,
+            # })
+            # print(f"Split → train={n_train} | val={n_val} | test={n_test} | total={n_total}")
 
 
-            lineage = {
-                "inputs": {
-                    "csvs":           OmegaConf.to_container(cfg.data_prep.input_csv_paths, resolve=True),
-                    "image_base_dir": cfg.data_prep.image_base_dir,
-                },
-                "outputs": {
-                    "train_file": cfg.data_prep.attribute_train_file,
-                    "val_file":   cfg.data_prep.attribute_val_file,
-                    "test_file":  cfg.data_prep.attribute_test_file,
-                },
-                "split": {
-                    "n_train": n_train,
-                    "n_val":   n_val,
-                    "n_test":  n_test,
-                    "n_total": n_total,
-                }
-            }
-            lineage_path = Path(cfg.data_prep.output_dir) / "lineage"
-            lineage_path.mkdir(parents=True, exist_ok=True)
-            with open(lineage_path / "lineage.json", "w") as f:
-                json.dump(lineage, f, indent=2)
-            print(f" Lineage written to: {lineage_path / 'lineage.json'}")
-
-            # ← ADDED: write resolved_config.yaml to output dir ───────────────
-            config_path = Path(cfg.data_prep.output_dir) / "config"
-            config_path.mkdir(parents=True, exist_ok=True)
-            with open(config_path / "resolved_config.yaml", "w") as f:
-                f.write(OmegaConf.to_yaml(cfg))
-            print(f" Config written to: {config_path / 'resolved_config.yaml'}")
-
-            # ── MLflow: log lineage artifact ──────────────────────────
-            # This answers "what data was used for this run?"
-            # /////////////////////////////////////////////////////////////////////////
             # lineage = {
             #     "inputs": {
             #         "csvs":           OmegaConf.to_container(cfg.data_prep.input_csv_paths, resolve=True),
@@ -535,33 +519,25 @@ def main(cfg: DictConfig) -> None:
             #         "n_total": n_total,
             #     }
             # }
-            # /////////////////////////////////////////////////////////////////////////
+            # lineage_path = Path(cfg.data_prep.output_dir) / "lineage"
+            # lineage_path.mkdir(parents=True, exist_ok=True)
+            # with open(lineage_path / "lineage.json", "w") as f:
+            #     json.dump(lineage, f, indent=2)
+            # print(f" Lineage written to: {lineage_path / 'lineage.json'}")
 
-            # lineage_path = Path(cfg.data_prep.output_dir) / "lineage.json"
-            # lineage_path.write_text(json.dumps(lineage, indent=2))
-            # mlflow.log_artifact(str(lineage_path), artifact_path="lineage")
+            # # ← ADDED: write resolved_config.yaml to output dir ───────────────
+            # config_path = Path(cfg.data_prep.output_dir) / "config"
+            # config_path.mkdir(parents=True, exist_ok=True)
+            # with open(config_path / "resolved_config.yaml", "w") as f:
+            #     f.write(OmegaConf.to_yaml(cfg))
+            # print(f" Config written to: {config_path / 'resolved_config.yaml'}")
 
-
-            # /////////////////////////////////////////////////////////////////////////
-            # mlflow.log_dict(lineage, artifact_file="lineage/lineage.json")
-            # /////////////////////////////////////////////////////////////////////////
-
-            # ── MLflow: log full resolved config ─────────────────────
-            # This answers "what exact config was used?"
-
-            # resolved_cfg_path = Path(cfg.data_prep.output_dir) / "resolved_config.yaml"
-            # resolved_cfg_path.write_text(OmegaConf.to_yaml(cfg))
-            # mlflow.log_artifact(str(resolved_cfg_path), artifact_path="config")
-
-            # /////////////////////////////////////////////////////////////////////////
-            # mlflow.log_text(OmegaConf.to_yaml(cfg), artifact_file="config/resolved_config.yaml")
-            # /////////////////////////////////////////////////////////////////////////
-
-            mlflow.set_tag("status", "SUCCESS")
-
+           
+            # mlflow.set_tag("status", "SUCCESS")
+            log_dataprep_status("SUCCESS")
 
         except Exception as e:
-            mlflow.set_tag("status", "FAILED")
+            log_dataprep_status("FAILED")
             print(f"\n❌ Data preparation failed: {e}")
             import traceback
             traceback.print_exc()

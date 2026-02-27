@@ -20,9 +20,6 @@ data_prep:
   attribute_test_file: tl_inlay_test_v1.jsonl
   output_dir: ${oc.env:AZURE_ML_OUTPUT_prep_output}/tl_inlay/data_prep
 
-
-
-
 # TRAINING CONFIGURATION - TL INLAY SPECIFIC
 training:
   model_id: "deepseek-ai/deepseek-vl2-tiny"
@@ -68,7 +65,6 @@ training:
     # output_dir: "/tmp/azureml_data_mount/raw_output/deepseek/exported/"
     output_dir: ${oc.env:AZURE_ML_OUTPUT_model_dir}/tl_inlay/exported/${config1.model}
 
-
 inference:
   # model: all
   # ----------------------------
@@ -79,7 +75,6 @@ inference:
     image_folder: ${oc.env:AZUREML_DATAREFERENCE_processed_images}/tl_inlay/data_prep/images
     exported_model_root: ${oc.env:AZUREML_DATAREFERENCE_input_data}/tl_inlay/exported/${config1.model}
     inference_output_dir: ${oc.env:AZURE_ML_OUTPUT_inference_results}/tl_inlay/inference_results/${config1.model}
-
 
 
 # defaults:
